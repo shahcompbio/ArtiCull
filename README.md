@@ -5,6 +5,7 @@
 python extract_features.py variant_maf mappability_bedgraph output bam_dir1 bam_dir2 ...
 ```
 
+## Output
 Extract features will create a tsv file, containing the following columns
 
 - `chrm`
