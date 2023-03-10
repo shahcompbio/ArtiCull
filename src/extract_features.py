@@ -1,13 +1,14 @@
-import pysam
 import os
-import functools
-import sys
 import argparse
 import subprocess
 import tempfile
 
 import pandas as pd
 pd.options.mode.chained_assignment = None #Suppress SettingWithACopy Warning
+
+from maf_input import get_variants
+from utils import update_progress
+from process_bams import match_variants_to_filenames, get_sam, generate_reads
 
 def parse_arguments():
 
@@ -32,69 +33,18 @@ def parse_arguments():
     validate_arguments(args)
     return args.maf, args.bam_dirs, args.map_bedgraph, args.output
 
-def get_variants(filename):
-    df = pd.read_table(filename, skiprows=1)
-    df['chrm'] = df['Chromosome'].astype('str')
-    df['pos'] = df['Start_Position']
-    df = df[(df['Variant_Type'] == 'SNP')&(df['FILTER'] == 'PASS')]
-    df['ref_allele'] = df['Reference_Allele']
-    df['alt_allele'] = df['Tumor_Seq_Allele2']
-
-    return df[['chrm', 'pos', 'ref_allele', 'alt_allele']]
-
 def extract_read_features(df, data_dirs):
-
-    def match_variants_to_filenames(df, data_dirs):
-        """
-        Bam files are assumed to be merged and in region format. Thus, for each variant
-        we match it to the appropriate file that contains that locus
-        """
-
-        files = [(f, f.strip().split('.')[0].split('-')) for f in os.listdir(data_dirs[0]) if f.endswith('.bam')]
-        files = [(filename, (region[0], int(region[1]), int(region[2]))) for filename, region in files]
-
-        def get_file(chrm, pos):
-            for filename, region in files:
-                if region[0] == chrm and region[1] <= pos and region[2] > pos:
-                    return filename
-            else:
-                raise Error('Variant does not fit in any region')
-
-        df['filename'] = df.apply(lambda x: get_file(x['chrm'], x['pos']), axis=1)
-        return df
-
-    @functools.lru_cache # memoizes
-    def get_sam(i, filename):
-        return pysam.AlignmentFile(os.path.join(data_dirs[i], filename), "rb")
-
-    def generate_reads(samfile, x):
-        chrm, pos, ref, alt = x['chrm'], x['pos'], x['ref_allele'], x['alt_allele']
-
-        for pileupcolumn in samfile.pileup(chrm, pos-1, pos+1, min_base_quality=20, min_mapping_quality=0):
-            if pileupcolumn.pos != pos-1: continue
-            for i, pileupread in enumerate(pileupcolumn.pileups):
-                if pileupread.is_del or pileupread.is_refskip: continue
-                is_alt = pileupread.alignment.query_sequence[pileupread.query_position] == alt
-                yield pileupread, is_alt
 
     def mean(data):
         try: mean = sum(data)/len(data)
         except ZeroDivisionError: mean = float("nan")
         return mean
 
-    def update_progress(tot):
-        prog = 0
-        while True:
-            yield prog
-            prog += 1
-            if prog % 20 == 0: print("\t Progress: {}/{}".format(prog, tot))
-
-
     def extract_single_variant_features(x):
         # Just to print progress
         next(prog)
 
-        var_sams = [get_sam(i, x['filename']) for i in range(len(data_dirs))]
+        var_sams = [get_sam(data_dir, x['filename']) for data_dir in data_dirs]
 
         reads = []
         for sam in var_sams: reads+=[r for r in generate_reads(sam, x)]
