@@ -1,37 +1,99 @@
 import os
+from os import path
 import argparse
 from collections import Counter
 import pandas as pd
 pd.options.mode.chained_assignment = None #Suppress SettingWithACopy Warning
+import subprocess
+import tempfile
 
-from maf_input import get_variants
-from utils import update_progress
-from process_bams import match_variants_to_filenames, get_sam, generate_reads
+from utils_io import get_variants, update_progress
+from utils_bams import match_variants_to_filenames, get_sam, generate_reads
 
-def parse_arguments():
-    def get_arguments():
-        parser = argparse.ArgumentParser()
-        parser.add_argument(dest='maf', type = str, help = '<Required> maf file containing candidate variants')
-        parser.add_argument(dest='clonemap', type = str, help = '<Required> Map of cells to clones')
-        parser.add_argument(dest='clonecns', type = str, help = '<Required> Map of cells to clones')
-        parser.add_argument(dest='output', type = str, help = '<Required> Full path and name of output file')
-        parser.add_argument(dest='bam_dirs', nargs="+", type = str, help = '<Required> list of bam directories')
-        args = parser.parse_args()
-        return args
 
-    def validate_arguments(args):
-        # Checks if input files exist and if output files are in directories that exist and can be written to
-        assert os.path.isfile(args.maf)
-        assert os.path.isfile(args.clonemap)
-        assert os.path.isfile(args.clonecns)
-        for dir in args.bam_dirs:
-            assert os.path.isdir(dir)
-        assert os.access(os.path.dirname(args.output), os.W_OK)
-
-    args = get_arguments()
+def main(args):
+    #maf, bam_dirs, signals_dir, output = parse_arguments()
     validate_arguments(args)
-    return args.maf, args.bam_dirs, args.clonemap, args.clonecns, args.output
+    maf, bam_dirs, signals_dir, output = args.maf, args.bam_dirs, args.signals_dir, args.output
 
+    print("1. Reading variants from: {}\n".format(maf))
+    df = get_variants(maf)
+
+    print("2. Process signals results from: {}\n".format(signals_dir))
+    #clonemap, clone_ids, clone_cns = process_signals(signals_dir)
+    df, clonemap, clone_ids = process_signals(df, signals_dir)
+
+    print("3. Extracting clone variant counts from: {}".format(bam_dirs))
+    df = get_clone_var_counts(df, bam_dirs, clonemap, clone_ids)
+
+    print("4. Computing CCFs")
+    df = compute_ccfs(df, clone_ids)
+
+    print("5. Outputting result to: {}\n".format(output))
+    df.to_csv(output, sep = '\t', index=False)
+
+def add_parser_arguments(parser):
+    parser.add_argument(dest='maf', type = str, help = '<Required> maf file containing candidate variants')
+    parser.add_argument(dest='signals_dir', type = str, help = '<Required> directory of signals output')
+    parser.add_argument(dest='output', type = str, help = '<Required> Full path and name of output file')
+    parser.add_argument(dest='bam_dirs', nargs="+", type = str, help = '<Required> list of bam directories')
+
+def validate_arguments(args):
+    # Checks if input files exist and if output files are in directories that exist and can be written to
+    for arg in vars(args):
+        print(arg, getattr(args, arg))
+
+    assert path.isfile(args.maf)
+    assert path.isdir(args.signals_dir)
+    for dir in args.bam_dirs:
+        assert path.isdir(dir)
+    assert os.access(path.dirname(args.output), os.W_OK)
+
+def process_signals(df, signals_dir):
+
+    signals_result = path.join(signals_dir, 'signals.Rdata')
+    signals_cns = path.join(signals_dir, 'hscn.csv.gz')
+    temp = tempfile.NamedTemporaryFile(delete=False, mode='w')
+    try:
+        temp.close()
+        directory = path.dirname(path.realpath(path.expanduser(__file__)))
+        command = "Rscript {}/extract_cell2clone.R {} {}".format(directory, signals_result, temp.name)
+        print(command)
+        subprocess.check_call(command.split(' '))
+
+        clonemap = pd.read_table(temp.name)
+        clone_ids = sorted(clonemap['clone_id'].unique())
+    finally:
+        os.remove(temp.name)
+
+    cn_df = pd.read_table(signals_cns, sep=',')
+
+    # Cell to clone map table
+    ids_map = clonemap['clone_id']
+    cn_df['clone']= cn_df['cell_id'].map(ids_map)
+    clone_cns = cn_df.groupby(['chr', 'start', 'end', 'clone'])[['Maj', 'Min']].median().reset_index()
+
+
+    clone_cn_dfs = {}
+    for chrm in clone_cns['chr'].unique():
+        clone_cns1 = clone_cns[clone_cns['chr'] == chrm]
+        clone_cns1['CN'] = clone_cns['Maj'] + clone_cns['Min']
+        clone_cns1 = clone_cns1.pivot(index=['start', 'end'], columns = 'clone', values = 'CN')
+        clone_cns1.index = pd.IntervalIndex.from_tuples(clone_cns1.index, closed='both')
+        clone_cn_dfs[chrm] = clone_cns1
+
+
+    columns = ['cn_{}'.format(c) for c in clone_ids]
+
+    def get_cn(x):
+        try:
+            return clone_cn_dfs[x['chrm']].loc[int(x['pos'])]
+        except KeyError:
+            return [float('nan')]*len(columns)
+
+    df[columns] = df.apply(get_cn, axis=1, result_type="expand")
+
+    return df, clonemap, clone_ids
 
 def get_clone_var_counts(df, data_dirs, clonemap, clone_ids):
 
@@ -84,31 +146,6 @@ def get_clone_var_counts(df, data_dirs, clonemap, clone_ids):
     del df['filename']
     return df
 
-def get_clone_cns(df, clonemap, clone_cn_file, clone_ids):
-
-    clone_cns = pd.read_table(clone_cn_file)
-
-    clone_cn_dfs = {}
-    for chrm in clone_cns['chr'].unique():
-        clone_cns1 = clone_cns[clone_cns['chr'] == chrm]
-        clone_cns1['CN'] = clone_cns['Maj'] + clone_cns['Min']
-        clone_cns1 = clone_cns1.pivot(index=['start', 'end'], columns = 'clone', values = 'CN')
-        clone_cns1.index = pd.IntervalIndex.from_tuples(clone_cns1.index, closed='both')
-        clone_cn_dfs[chrm] = clone_cns1
-
-    #for i in clone_cn_dfs['5'].index: print(i)
-
-    columns = ['cn_{}'.format(c) for c in clone_ids]
-
-    def get_cn(x):
-        try:
-            return clone_cn_dfs[x['chrm']].loc[int(x['pos'])]
-        except KeyError:
-            return [float('nan')]*len(columns)
-
-    df[columns] = df.apply(get_cn, axis=1, result_type="expand")
-    return df
-
 def compute_ccfs(df, clone_ids):
     for clone in clone_ids:
         ccf = 'ccf_{}'.format(clone)
@@ -120,28 +157,9 @@ def compute_ccfs(df, clone_ids):
 
     return df
 
-def read_clonemap(clonemap_file):
-    clonemap = pd.read_table(clonemap_file)
-    clone_ids = sorted(clonemap['clone_id'].unique())
-    return clonemap, clone_ids
-
-
-def main():
-    maf, bam_dirs, clonemap_file, clone_cns, output = parse_arguments()
-    print("1. Reading variants from: {}\n".format(maf))
-    df = get_variants(maf)
-    clonemap, clone_ids = read_clonemap(clonemap_file)
-
-    print("2. Extracting clone variant counts from: {}".format(bam_dirs))
-    df = get_clone_var_counts(df, bam_dirs, clonemap, clone_ids)
-
-    print("3. Getting clone copy numbers and computing CCFs from : {}\n".format(clone_cns))
-    df = get_clone_cns(df, clonemap, clone_cns, clone_ids)
-    df = compute_ccfs(df, clone_ids)
-
-
-    print("3. Outputting result to: {}\n".format(output))
-    df.to_csv(output, sep = '\t', index=False)
-
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    add_parser_arguments(parser)
+    args = parser.parse_args()
+
+    main(args)

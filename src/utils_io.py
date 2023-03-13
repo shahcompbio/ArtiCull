@@ -10,3 +10,11 @@ def get_variants(filename):
     df['alt_allele'] = df['Tumor_Seq_Allele2']
 
     return df[['chrm', 'pos', 'ref_allele', 'alt_allele']]
+
+def update_progress(tot):
+    # Could be shared with extract features?
+    prog = 0
+    while True:
+        yield prog
+        prog += 1
+        if prog % 20 == 0: print("\t Progress: {}/{}".format(prog, tot))

@@ -6,32 +6,38 @@ import tempfile
 import pandas as pd
 pd.options.mode.chained_assignment = None #Suppress SettingWithACopy Warning
 
-from maf_input import get_variants
-from utils import update_progress
-from process_bams import match_variants_to_filenames, get_sam, generate_reads
+from utils_io import get_variants, update_progress
+from utils_bams import match_variants_to_filenames, get_sam, generate_reads
 
-def parse_arguments():
-
-    def get_arguments():
-        parser = argparse.ArgumentParser()
-        parser.add_argument(dest='maf', type = str, help = '<Required> maf file containing candidate variants')
-        parser.add_argument(dest='map_bedgraph', type = str, help = '<Required> Mappability bedgraph')
-        parser.add_argument(dest='output', type = str, help = '<Required> Full path and name of output file')
-        parser.add_argument(dest='bam_dirs', nargs="+", type = str, help = '<Required> list of bam directories')
-        args = parser.parse_args()
-        return args
-
-    def validate_arguments(args):
-        # Checks if input files exist and if output files are in directories that exist and can be written to
-        assert os.path.isfile(args.maf)
-        assert os.path.isfile(args.map_bedgraph)
-        for dir in args.bam_dirs:
-            assert os.path.isdir(dir)
-        assert os.access(os.path.dirname(args.output), os.W_OK)
-
-    args = get_arguments()
+def main(args):
     validate_arguments(args)
-    return args.maf, args.bam_dirs, args.map_bedgraph, args.output
+    maf, bam_dirs, mappability, output = args.maf, args.bam_dirs, args.map_bedgraph, args.output
+
+    print("1. Reading Variants from: {}\n".format(maf))
+    df = get_variants(maf)
+    print("2. Extracting Read Features from: {}".format(bam_dirs))
+    df = extract_read_features(df, bam_dirs)
+    print("\n3. Extracting Mappability from: {}\n".format(mappability) )
+    df = run_mappability(df, mappability)
+    print("4. Outputting Result to: {}\n".format(output))
+    df.to_csv(output, sep = '\t', index=False)
+
+def add_parser_arguments(parser):
+    parser.add_argument(dest='maf', type = str, help = '<Required> maf file containing candidate variants')
+    parser.add_argument(dest='map_bedgraph', type = str, help = '<Required> Mappability bedgraph')
+    parser.add_argument(dest='output', type = str, help = '<Required> Full path and name of output file')
+    parser.add_argument(dest='bam_dirs', nargs="+", type = str, help = '<Required> list of bam directories')
+
+def validate_arguments(args):
+    # Checks if input files exist and if output files are in directories that exist and can be written to
+    for arg in vars(args):
+        print(arg, getattr(args, arg))
+
+    assert os.path.isfile(args.maf)
+    assert os.path.isfile(args.map_bedgraph)
+    for dir in args.bam_dirs:
+        assert os.path.isdir(dir)
+    assert os.access(os.path.dirname(args.output), os.W_OK)
 
 def extract_read_features(df, data_dirs):
 
@@ -114,16 +120,9 @@ def run_mappability(df, mappability):
 
     return df
 
-def main():
-    maf, bam_dirs, mappability, output = parse_arguments()
-    print("1. Reading Variants from: {}\n".format(maf))
-    df = get_variants(maf)
-    print("2. Extracting Read Features from: {}".format(bam_dirs))
-    df = extract_read_features(df, bam_dirs)
-    print("\n3. Extracting Mappability from: {}\n".format(mappability) )
-    df = run_mappability(df, mappability)
-    print("4. Outputting Result to: {}\n".format(output))
-    df.to_csv(output, sep = '\t', index=False)
-
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    add_parser_arguments(parser)
+    args = parser.parse_args()
+
+    main(args)
