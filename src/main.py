@@ -3,14 +3,14 @@ import argparse
 import mixture_model_preprocessing
 import extract_features
 import mixture_model
-import train_model
+import train_classifier
 
 if __name__ == '__main__':
     modes = {
             "extract_features" : extract_features,
             "mm_preprocessing" : mixture_model_preprocessing,
             "mixture_model" : mixture_model,
-            "train_model" : train_model
+            "train_classifier" : train_model
             }
 
     parser = argparse.ArgumentParser()
