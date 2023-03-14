@@ -6,7 +6,10 @@ from scipy.stats import beta as beta_rv, binom as binom_rv, gaussian_kde
 import scipy.integrate as integrate
 import scipy.special
 
+from utils_io import update_progress
+
 eps = 0.005
+prog = 0
 
 def initialize_EM(df):
     assignments = df.apply(initial_assignment, axis=1)
@@ -17,33 +20,35 @@ def initialize_EM(df):
 
 def initial_assignment(mut):
     #var, tot, vaf, cn = mut
+    # 0 = CLONAL
+    # 1,2 = Subclonal Private
+    # 3 = Shared subclonal
 
-    if mut[ccf1] > 0.6 and mut[ccf2] > 0.6: return 0
-    elif mut[ccf2] <.05 : return 1
-    elif mut[ccf1] <.05 : return 2
+    if mut['ccf_1'] > 0.6 and mut['ccf_2'] > 0.6: return 0
+    elif mut['ccf_2'] <.05 : return 1
+    elif mut['ccf_1'] <.05 : return 2
     else: return 3
-
 
 def EM(dists, weights, df):
     print("Computing Responsibilities")
-    R = df[[var1,var2,tot1,tot2,cn1,cn2]].apply(lambda x: compute_responsibilities(x, dists, weights), axis=1).tolist()
-    df['responsibilities'] = R
+
+    df_subset = df.sample(n=min(len(df), 1000), replace=False)
+    R = df_subset.apply(lambda x: compute_responsibilities(x, dists, weights), axis=1).tolist()
     print("Updating Distributions")
-    dists = estimate_kde_soft(dists, df, R)
-    weights = [sum([r[i] for r in R])/len(df) for i in range(4)]
+    dists = estimate_kde_soft(dists, df_subset, R)
+    weights = [sum([r[i] for r in R])/len(df_subset) for i in range(4)]
 
-    return dists, weights, R, df
-
+    return dists, weights, R
 
 def compute_responsibilities(mut, dists, weights):
     global prog
     if prog % 200 == 0: print(prog)
     prog += 1
-    Z_1, Z_2, Z_a1, Z_a2, Z_a12 = dists
+    Z_1, Z_2, Z_a1 = dists
 
-    v1, t1 = mut[var1], mut[tot1]
-    v2, t2 = mut[var2], mut[tot2]
-    c1, c2 = mut[cn1], mut[cn2]
+    v1, t1 = mut['var_1'], mut['tot_1']
+    v2, t2 = mut['var_2'], mut['tot_2']
+    c1, c2 = mut['cn_1'], mut['cn_2']
 
     r = []
     # Public cluster
@@ -82,46 +87,43 @@ def compute_integral(Z, v, t, cn):
     def integrand(x):
         x_adj = x/cn - (2*x*eps)/cn + eps
         return Z.pdf(x)[0] * binom_pmf(t, x_adj, v)
-
     return integrate.quad(integrand, a = 0, b = 1)[0]
 
 def estimate_kde_soft(prev_dists, df, R):
 
     # Private Clone 1
-    points = df[ccf1]
+    points = df['ccf_1']
     weights = [r[1] for r in R]
     Z_1 = gaussian_kde(points, weights = weights)
 
     # Private Clone 2
-    points = df[ccf2]
+    points = df['ccf_1']
     weights = [r[2] for r in R]
     Z_2 = gaussian_kde(points, weights = weights)
 
     # Artifact
-    points_1 = df[ccf1]
-    points_2 = df[ccf2]
+    points_1 = df['ccf_1']
+    points_2 = df['ccf_2']
     weights = [r[3] for r in R]
     Z_a1 = gaussian_kde(list(points_1)+list(points_2), weights = weights+weights)
-    Z_a2, Z_a12 = None, None
 
     # TODO: Remove unused distributions
-    return Z_1, Z_2, Z_a1, Z_a2, Z_a12
+    return Z_1, Z_2, Z_a1
 
 def estimate_kde_hard(df):
 
     # Private Clone 1
-    points = df[df['assignment'] == 1][ccf1]
+    points = df[df['assignment'] == 1]['ccf_1']
     Z_1 = gaussian_kde(points)
 
     # Private Clone 2
-    points = df[df['assignment'] == 2][ccf2]
+    points = df[df['assignment'] == 2]['ccf_2']
     Z_2 = gaussian_kde(points)
 
     # Artifact
-    points_1 = df[df['assignment'] == 3][ccf1]
-    points_2 = df[df['assignment'] == 3][ccf2]
+    points_1 = df[df['assignment'] == 3]['ccf_1']
+    points_2 = df[df['assignment'] == 3]['ccf_2']
     Z_a1 = gaussian_kde(list(points_1) + list(points_2))
-    Z_a2, Z_a12 = None, None
 
     # TODO: Remove unused distributions
-    return Z_1, Z_2, Z_a1, Z_a2, Z_a12
+    return Z_1, Z_2, Z_a1
