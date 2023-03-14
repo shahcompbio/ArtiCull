@@ -1,0 +1,14 @@
+name: snv_filter
+channels:
+- conda-forge
+- bioconda
+- defaults
+dependencies:
+- numpy
+- scipy
+- pandas 
+- matplotlib
+- seaborn
+- R
+- R-essentials
+- pysam
