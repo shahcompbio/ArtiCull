@@ -18,9 +18,8 @@ def main(args):
         prog = 0
         print("Iteration {}".format(i))
         dists, weights, R = EM(dists, weights, df)
-    exit()
     print("Compute all responsibilities")
-    df['responsibilities'] = df.apply(lambda x: compute_responsibilities(x, dists, weights), axis=1).tolist()
+    df['responsibilities'] = df.parallel_apply(lambda x: compute_responsibilities(x, dists, weights), axis=1).tolist()
 
     df['assignment'] = df['responsibilities'].apply(lambda x: np.argmax(x))
     df.to_csv("{}/assignments.tsv".format(output_dir), sep='\t', index=False)

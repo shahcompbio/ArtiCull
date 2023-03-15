@@ -33,7 +33,7 @@ def EM(dists, weights, df):
     print("Computing Responsibilities")
 
     df_subset = df.sample(n=min(len(df), 1000), replace=False)
-    R = df_subset.apply(lambda x: compute_responsibilities(x, dists, weights), axis=1).tolist()
+    R = df_subset.parallel_apply(lambda x: compute_responsibilities(x, dists, weights), axis=1).tolist()
     print("Updating Distributions")
     dists = estimate_kde_soft(dists, df_subset, R)
     weights = [sum([r[i] for r in R])/len(df_subset) for i in range(4)]
@@ -41,9 +41,9 @@ def EM(dists, weights, df):
     return dists, weights, R
 
 def compute_responsibilities(mut, dists, weights):
-    global prog
-    if prog % 200 == 0: print(prog)
-    prog += 1
+    #global prog
+    #if prog % 200 == 0: print(prog)
+    #prog += 1
     Z_1, Z_2, Z_a1 = dists
 
     v1, t1 = mut['var_1'], mut['tot_1']

@@ -2,20 +2,14 @@ import os
 import argparse
 import subprocess
 import tempfile
-import polars as pl
 
-from pandarallel import pandarallel
-
-pandarallel.initialize(progress_bar=True)
-
-# df.apply(func)
 
 
 import pandas as pd
 pd.options.mode.chained_assignment = None #Suppress SettingWithACopy Warning
 
 from utils_io import get_variants, update_progress
-from utils_bams import match_variants_to_filenames,  generate_reads, generate_alt_reads, get_sam
+from utils_bams import match_variants_to_filenames,  generate_reads,  get_sam
 
 def main(args):
     validate_arguments(args)
@@ -79,14 +73,6 @@ def extract_read_features(df, data_dirs):
     df = match_variants_to_filenames(df, data_dirs)
     prog = update_progress(len(df))
     features = ['f_var_length', 'f_aligned_length', 'f_nm', 'f_softclip', 'f_mapq', 'f_tlen'] #, 'f_tot']
-    print("Doing things")
-
-
-
-    #df = df[:500]
-    #pl_df = pl.from_pandas(df)
-
-    import time
 
     df[features] = df.parallel_apply(lambda x: extract_single_variant_features(x), axis=1, result_type="expand")
 

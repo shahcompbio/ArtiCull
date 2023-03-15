@@ -54,6 +54,7 @@ def process_signals(df, signals_dir):
     signals_result = path.join(signals_dir, 'signals.Rdata')
     signals_cns = path.join(signals_dir, 'hscn.csv.gz')
     temp = tempfile.NamedTemporaryFile(delete=False, mode='w')
+    #new_temp = "./cn.txt"
     try:
         temp.close()
         directory = path.dirname(path.realpath(path.expanduser(__file__)))
@@ -62,8 +63,10 @@ def process_signals(df, signals_dir):
         subprocess.check_call(command.split(' '))
 
         clonemap = pd.read_table(temp.name)
+        #clonemap = pd.read_table(new_temp)
         clone_ids = sorted(clonemap['clone_id'].unique())
     finally:
+        #pass
         os.remove(temp.name)
 
     cn_df = pd.read_table(signals_cns, sep=',')
@@ -91,7 +94,7 @@ def process_signals(df, signals_dir):
         except KeyError:
             return [float('nan')]*len(columns)
 
-    df[columns] = df.apply(get_cn, axis=1, result_type="expand")
+    df[columns] = df.parallel_apply(get_cn, axis=1, result_type="expand")
 
     return df, clonemap, clone_ids
 
@@ -108,7 +111,7 @@ def get_clone_var_counts(df, data_dirs, clonemap, clone_ids):
         return clones
 
     def process_variant(x):
-        next(prog)
+        #next(prog)
 
         var_sams = [get_sam(data_dir, x['filename']) for data_dir in data_dirs]
 
@@ -141,7 +144,7 @@ def get_clone_var_counts(df, data_dirs, clonemap, clone_ids):
     for c in clone_ids:
             columns+=['var_{}'.format(c), 'tot_{}'.format(c)]
 
-    df[columns] = df.apply(process_variant, axis=1, result_type="expand")
+    df[columns] = df.parallel_apply(process_variant, axis=1, result_type="expand")
 
     del df['filename']
     return df
