@@ -2,12 +2,20 @@ import os
 import argparse
 import subprocess
 import tempfile
+import polars as pl
+
+from pandarallel import pandarallel
+
+pandarallel.initialize(progress_bar=True)
+
+# df.apply(func)
+
 
 import pandas as pd
 pd.options.mode.chained_assignment = None #Suppress SettingWithACopy Warning
 
 from utils_io import get_variants, update_progress
-from utils_bams import match_variants_to_filenames, get_sam, generate_reads
+from utils_bams import match_variants_to_filenames,  generate_reads, generate_alt_reads, get_sam
 
 def main(args):
     validate_arguments(args)
@@ -39,6 +47,11 @@ def validate_arguments(args):
         assert os.path.isdir(dir)
     assert os.access(os.path.dirname(args.output), os.W_OK)
 
+
+#def get_sam(data_dir, filename):
+#    # Could be shared with extract features?
+#    return pysam.AlignmentFile(os.path.join(data_dir, filename), "rb")
+
 def extract_read_features(df, data_dirs):
 
     def mean(data):
@@ -48,10 +61,8 @@ def extract_read_features(df, data_dirs):
 
     def extract_single_variant_features(x):
         # Just to print progress
-        next(prog)
-
+        #next(prog)
         var_sams = [get_sam(data_dir, x['filename']) for data_dir in data_dirs]
-
         reads = []
         for sam in var_sams: reads+=[r for r in generate_reads(sam, x)]
         alt_reads = [read for read, is_alt in reads if is_alt]
@@ -62,14 +73,23 @@ def extract_read_features(df, data_dirs):
         softclip = mean([read.alignment.get_cigar_stats()[0][4] for read in alt_reads])
         mapq = mean([read.alignment.mapping_quality for read in alt_reads])
         tlen = mean([abs(read.alignment.template_length) for read in alt_reads])
-        tot = len(reads)
 
-        return var_length, aligned_length, nm, softclip, mapq, tlen, tot
+        return var_length, aligned_length, nm, softclip, mapq, tlen#, tot
 
     df = match_variants_to_filenames(df, data_dirs)
     prog = update_progress(len(df))
-    features = ['f_var_length', 'f_aligned_length', 'f_nm', 'f_softclip', 'f_mapq', 'f_tlen', 'f_tot']
-    df[features] = df.apply(extract_single_variant_features, axis=1, result_type="expand")
+    features = ['f_var_length', 'f_aligned_length', 'f_nm', 'f_softclip', 'f_mapq', 'f_tlen'] #, 'f_tot']
+    print("Doing things")
+
+
+
+    #df = df[:500]
+    #pl_df = pl.from_pandas(df)
+
+    import time
+
+    df[features] = df.parallel_apply(lambda x: extract_single_variant_features(x), axis=1, result_type="expand")
+
 
     del df['filename']
     return df

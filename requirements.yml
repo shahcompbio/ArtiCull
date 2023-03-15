@@ -2,6 +2,7 @@ name: snv_filter
 channels:
 - conda-forge
 - bioconda
+- anaconda
 - defaults
 dependencies:
 - numpy
@@ -12,3 +13,5 @@ dependencies:
 - R
 - R-essentials
 - pysam
+- scikit-learn
+- pandarallel 
