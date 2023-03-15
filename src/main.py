@@ -10,12 +10,12 @@ if __name__ == '__main__':
             "extract_features" : extract_features,
             "mm_preprocessing" : mixture_model_preprocessing,
             "mixture_model" : mixture_model,
-            "train_classifier" : train_model
+            "train_classifier" : train_classifier
             }
 
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest = 'mode', required = True, \
-        help='<Required> Running mode: {}'.format(str(modes.keys()))
+            help='<Required> Running mode: {}'.format(str(modes.keys())))
 
     for mode in modes:
         subparser = subparsers.add_parser(mode)
@@ -24,6 +24,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     mode = args.mode
     try:
-        modes[mode].main(args)
-    except:
-        print('Invalid mode provided: {} \nMode must be one of {}'.format(mode, str(modes.keys())))
+        modes[mode]
+    except KeyError:
+        raise Exception('Invalid mode provided: {} \nMode must be one of {}'.format(mode, str(modes.keys())))
+
+    modes[mode].main(args)
