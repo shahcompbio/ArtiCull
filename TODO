@@ -1,10 +1,6 @@
-IMPORTANT: update mm_preprocessing to create ccf plots and arguments to output_dir
-
-
 - Update validate_arguments in files that are missing it
 - Move validate arguments call out to main.py
 - Consider error rate in mixture model
 - Handle high-ccf outliers and tetraploidy in mixture model
 - move to logging?
-- Update README
-
+- Update extract_features to use outputdir
