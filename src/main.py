@@ -4,6 +4,7 @@ import mixture_model_preprocessing
 import extract_features
 import mixture_model
 import train_classifier
+import apply_classifier
 
 from pandarallel import pandarallel
 
@@ -13,7 +14,8 @@ if __name__ == '__main__':
             "extract_features" : extract_features,
             "mm_preprocessing" : mixture_model_preprocessing,
             "mixture_model" : mixture_model,
-            "train_classifier" : train_classifier
+            "train_classifier" : train_classifier,
+            "classify": apply_classifier
             }
 
     parser = argparse.ArgumentParser()
@@ -25,8 +27,9 @@ if __name__ == '__main__':
     for mode in modes:
         subparser = subparsers.add_parser(mode)
         modes[mode].add_parser_arguments(subparser)
-        subparser.add_argument('--cores', '-j', default = None, type = int, \
-            help = 'Number of workers to use for parallelization. <Default> the number of available cores')
+        if mode not in ['train_classifier', 'classify']:
+            subparser.add_argument('--cores', '-j', default = None, type = int, \
+                help = 'Number of workers to use for parallelization. <Default> the number of available cores')
 
 
     args = parser.parse_args()
