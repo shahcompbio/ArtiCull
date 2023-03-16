@@ -6,6 +6,8 @@ import pandas as pd
 pd.options.mode.chained_assignment = None #Suppress SettingWithACopy Warning
 import subprocess
 import tempfile
+from matplotlib import pyplot
+import seaborn as sns
 
 from utils_io import get_variants, update_progress
 from utils_bams import match_variants_to_filenames, get_sam, generate_reads
@@ -14,14 +16,16 @@ from utils_bams import match_variants_to_filenames, get_sam, generate_reads
 def main(args):
     #maf, bam_dirs, signals_dir, output = parse_arguments()
     validate_arguments(args)
-    maf, bam_dirs, signals_dir, output = args.maf, args.bam_dirs, args.signals_dir, args.output
+    maf, bam_dirs, signals_dir, output_dir = args.maf, args.bam_dirs, args.signals_dir, args.output_dir
 
-    print("1. Reading variants from: {}\n".format(maf))
+    print("1. Reading variants from: {}".format(maf))
     df = get_variants(maf)
 
-    print("2. Process signals results from: {}\n".format(signals_dir))
+    print("2. Process signals results from: {}".format(signals_dir))
     #clonemap, clone_ids, clone_cns = process_signals(signals_dir)
     df, clonemap, clone_ids = process_signals(df, signals_dir)
+
+    print(clone_ids)
 
     print("3. Extracting clone variant counts from: {}".format(bam_dirs))
     df = get_clone_var_counts(df, bam_dirs, clonemap, clone_ids)
@@ -29,13 +33,18 @@ def main(args):
     print("4. Computing CCFs")
     df = compute_ccfs(df, clone_ids)
 
-    print("5. Outputting result to: {}\n".format(output))
-    df.to_csv(output, sep = '\t', index=False)
+    result_filename = os.path.join(output_dir, "var_counts.tsv")
+    print("5. Outputting result to: {}".format(result_filename))
+    df.to_csv(result_filename, sep = '\t', index=False)
+
+    plot_filename = os.path.join(output_dir, "clone_ccfs.pdf")
+    print("6. Creating clone CCF plot at: {}".format(plot_filename))
+    plot_ccfs(df, plot_filename, clone_ids)
 
 def add_parser_arguments(parser):
     parser.add_argument(dest='maf', type = str, help = '<Required> maf file containing candidate variants')
     parser.add_argument(dest='signals_dir', type = str, help = '<Required> directory of signals output')
-    parser.add_argument(dest='output', type = str, help = '<Required> Full path and name of output file')
+    parser.add_argument(dest='output_dir', type = str, help = '<Required> Full path and name of output file')
     parser.add_argument(dest='bam_dirs', nargs="+", type = str, help = '<Required> list of bam directories')
 
 def validate_arguments(args):
@@ -47,54 +56,56 @@ def validate_arguments(args):
     assert path.isdir(args.signals_dir)
     for dir in args.bam_dirs:
         assert path.isdir(dir)
-    assert os.access(path.dirname(args.output), os.W_OK)
+    assert os.access(args.output_dir, os.W_OK)
 
 def process_signals(df, signals_dir):
 
     signals_result = path.join(signals_dir, 'signals.Rdata')
     signals_cns = path.join(signals_dir, 'hscn.csv.gz')
     temp = tempfile.NamedTemporaryFile(delete=False, mode='w')
-    #new_temp = "./cn.txt"
+    temp_name = temp.name
+    #temp_name = "./cn.txt"
     try:
-        temp.close()
+        #temp.close()
         directory = path.dirname(path.realpath(path.expanduser(__file__)))
-        command = "Rscript {}/extract_cell2clone.R {} {}".format(directory, signals_result, temp.name)
-        print(command)
+        command = "Rscript {}/extract_cell2clone.R {} {}".format(directory, signals_result, temp_name)
+        #print(command)
         subprocess.check_call(command.split(' '))
 
-        clonemap = pd.read_table(temp.name)
-        #clonemap = pd.read_table(new_temp)
+        clonemap = pd.read_table(temp_name)
         clone_ids = sorted(clonemap['clone_id'].unique())
     finally:
-        #pass
-        os.remove(temp.name)
+        os.remove(temp_name)
 
     cn_df = pd.read_table(signals_cns, sep=',')
 
     # Cell to clone map table
     ids_map = clonemap['clone_id']
     cn_df['clone']= cn_df['cell_id'].map(ids_map)
-    clone_cns = cn_df.groupby(['chr', 'start', 'end', 'clone'])[['Maj', 'Min']].median().reset_index()
 
+    clone_cns = cn_df.groupby(['chr', 'start', 'end', 'clone'])[['Maj', 'Min']].median().reset_index()
 
     clone_cn_dfs = {}
     for chrm in clone_cns['chr'].unique():
         clone_cns1 = clone_cns[clone_cns['chr'] == chrm]
         clone_cns1['CN'] = clone_cns['Maj'] + clone_cns['Min']
         clone_cns1 = clone_cns1.pivot(index=['start', 'end'], columns = 'clone', values = 'CN')
+        clone_cns1 = clone_cns1[sorted(clone_cns1.columns)]
         clone_cns1.index = pd.IntervalIndex.from_tuples(clone_cns1.index, closed='both')
         clone_cn_dfs[chrm] = clone_cns1
-
 
     columns = ['cn_{}'.format(c) for c in clone_ids]
 
     def get_cn(x):
         try:
-            return clone_cn_dfs[x['chrm']].loc[int(x['pos'])]
+            result = clone_cn_dfs[x['chrm']].loc[int(x['pos'])].values
+            return result
+
         except KeyError:
             return [float('nan')]*len(columns)
 
-    df[columns] = df.parallel_apply(get_cn, axis=1, result_type="expand")
+    result = df.parallel_apply(get_cn, axis=1, result_type="expand")
+    df[columns] = result
 
     return df, clonemap, clone_ids
 
@@ -159,6 +170,20 @@ def compute_ccfs(df, clone_ids):
         df[ccf] = df[var] *  df[cn] / df[tot]
 
     return df
+
+def plot_ccfs(df, output, clone_ids):
+
+    sns.set_context('paper', font_scale=1.5)
+
+    df_plot = pd.DataFrame()
+    for c in clone_ids:
+        df_plot[c] = df['ccf_{}'.format(c)]
+
+    g = sns.pairplot(df_plot, kind='scatter', plot_kws={'alpha':0.2, 's':8}, corner=True)
+    g.set(xlim=(-0.1,2.1), ylim = (-0.1,2.1))
+    pyplot.savefig(output, bbox_inches = 'tight')
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
