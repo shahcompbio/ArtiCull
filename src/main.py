@@ -14,7 +14,7 @@ if __name__ == '__main__':
             "extract_features" : extract_features,
             "mm_preprocessing" : mixture_model_preprocessing,
             "mixture_model" : mixture_model,
-            "train_classifier" : train_classifier,
+            "train" : train_classifier,
             "classify": apply_classifier
             }
 
