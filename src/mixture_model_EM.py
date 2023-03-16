@@ -51,7 +51,7 @@ def compute_responsibilities(mut, dists, weights):
     c1, c2 = mut['cn_1'], mut['cn_2']
 
     if c1 == 0 or c2 == 0:
-        return [0,1,0,0]        
+        return [0,0.5,0.5,0]
 
     r = []
     # Public cluster
@@ -74,12 +74,6 @@ def compute_responsibilities(mut, dists, weights):
     a = compute_integral(Z_a1, v1, t1, c1)
     b = compute_integral(Z_a1, v2, t2, c2)
     r.append(weights[3]*a*b)
-
-    try:
-        r = [v/sum(r) for v in r]
-    except:
-        return [0,1,0,0]
-
 
     return r
 
