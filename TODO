@@ -1,0 +1,4 @@
+- Update validate_arguments in files that are missing it
+- Move validate arguments call out to main.py
+- Consider error rate in mixture model
+- Handle high-ccf outliers and tetraploidy in mixture model
