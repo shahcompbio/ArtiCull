@@ -1,3 +1,6 @@
+IMPORTANT: update mm_preprocessing to create ccf plots and arguments to output_dir
+
+
 - Update validate_arguments in files that are missing it
 - Move validate arguments call out to main.py
 - Consider error rate in mixture model

@@ -21,7 +21,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
      # to use. By default, will use all available ')
     subparsers = parser.add_subparsers(dest = 'mode', required = True, \
-            help='<Required> Running mode: {}'.format(str(modes.keys())))
+            help='<Required> Select mode')
 
 
     for mode in modes:

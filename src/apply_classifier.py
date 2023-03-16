@@ -15,7 +15,7 @@ def main(args):
     write_output(df, labels, probs, args.output_dir)
 
 def add_parser_arguments(parser):
-    parser.add_argument(dest='input_file', type = str, help = '<Required> Input file containing variant features')
+    parser.add_argument(dest='features', type = str, help = '<Required> Input file containing variant features')
     parser.add_argument(dest='output_dir', type = str, help = '<Required> Output directory')
     parser.add_argument(dest='model_dir', type = str, help = '<Required> Directory containing model.pkl and scaler.plk')
 
@@ -30,8 +30,8 @@ def load_model(model_dir):
         scaler = pickle.load(f)
     return model, scaler
 
-def get_input_data(args.input_file, scaler):
-    df = pd.read_table(filename)
+def get_input_data(input_file, scaler):
+    df = pd.read_table(input_file)
 
     features = [c for c in df.columns if c.starts_with('f_')]
     data = df[features].values
