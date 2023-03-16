@@ -1,4 +1,17 @@
 # DLP SNV Filtering
+## Table of Contents
+- [Setup](https://github.mskcc.org/SatasG/dlp-snv-classifier#setup)
+- [Usage Overview](https://github.mskcc.org/SatasG/dlp-snv-classifier#usage-overview)
+- [Recipes](https://github.mskcc.org/SatasG/dlp-snv-classifier#recipes)
+  - [Applying pre-trained model](https://github.mskcc.org/SatasG/dlp-snv-classifier#applying-pre-trained-model)
+  - [Training new model](https://github.mskcc.org/SatasG/dlp-snv-classifier#applying-pre-trained-model)
+- [Modes](https://github.mskcc.org/SatasG/dlp-snv-classifier#modes)
+  - [extract_features](https://github.mskcc.org/SatasG/dlp-snv-classifier#extract-features)
+  - [classify](https://github.mskcc.org/SatasG/dlp-snv-classifier#classify)
+  - [mm_preprocessing](https://github.mskcc.org/SatasG/dlp-snv-classifier#mm-preprocessing)
+  - [mixture_model](https://github.mskcc.org/SatasG/dlp-snv-classifier#mixture-model)
+  - [train](https://github.mskcc.org/SatasG/dlp-snv-classifier#mm-preprocessing)
+
 
 ## Setup
 Dependencies are listed in the `requirements.yml` file. To create and activate a new conda environment with these dependencies,
