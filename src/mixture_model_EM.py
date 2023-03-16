@@ -9,7 +9,6 @@ import scipy.special
 from utils_io import update_progress
 
 eps = 0.005
-prog = 0
 
 def initialize_EM(df):
     assignments = df.apply(initial_assignment, axis=1)
@@ -19,7 +18,6 @@ def initialize_EM(df):
     return df, weights, dists
 
 def initial_assignment(mut):
-    #var, tot, vaf, cn = mut
     # 0 = CLONAL
     # 1,2 = Subclonal Private
     # 3 = Shared subclonal
@@ -41,9 +39,6 @@ def EM(dists, weights, df):
     return dists, weights, R
 
 def compute_responsibilities(mut, dists, weights):
-    #global prog
-    #if prog % 200 == 0: print(prog)
-    #prog += 1
     Z_1, Z_2, Z_a1 = dists
 
     v1, t1 = mut['var_1'], mut['tot_1']
@@ -109,7 +104,6 @@ def estimate_kde_soft(prev_dists, df, R):
     weights = [r[3] for r in R]
     Z_a1 = gaussian_kde(list(points_1)+list(points_2), weights = weights+weights)
 
-    # TODO: Remove unused distributions
     return Z_1, Z_2, Z_a1
 
 def estimate_kde_hard(df):
@@ -127,5 +121,4 @@ def estimate_kde_hard(df):
     points_2 = df[df['assignment'] == 3]['ccf_2']
     Z_a1 = gaussian_kde(list(points_1) + list(points_2))
 
-    # TODO: Remove unused distributions
     return Z_1, Z_2, Z_a1

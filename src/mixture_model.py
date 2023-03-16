@@ -33,6 +33,7 @@ def add_parser_arguments(parser):
     parser.add_argument(dest='clone2',  type = str, help = '<Required> Name of clone')
 
 def validate_arguments(args):
+    #TODO
     pass
 
 def process_df(input_file, clone1, clone2):
