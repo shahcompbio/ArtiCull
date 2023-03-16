@@ -50,6 +50,9 @@ def compute_responsibilities(mut, dists, weights):
     v2, t2 = mut['var_2'], mut['tot_2']
     c1, c2 = mut['cn_1'], mut['cn_2']
 
+    if c1 == 0 or c2 == 0:
+        return [0,1,0,0]        
+
     r = []
     # Public cluster
     ## This does not properly account for error
@@ -72,7 +75,12 @@ def compute_responsibilities(mut, dists, weights):
     b = compute_integral(Z_a1, v2, t2, c2)
     r.append(weights[3]*a*b)
 
-    r = [v/sum(r) for v in r]
+    try:
+        r = [v/sum(r) for v in r]
+    except:
+        return [0,1,0,0]
+
+
     return r
 
 @functools.lru_cache
