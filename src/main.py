@@ -23,7 +23,6 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(dest = 'mode', required = True, \
             help='<Required> Select mode')
 
-
     for mode in modes:
         subparser = subparsers.add_parser(mode)
         modes[mode].add_parser_arguments(subparser)
@@ -33,15 +32,16 @@ if __name__ == '__main__':
 
 
     args = parser.parse_args()
-    if mode not in ['train_classifier', 'classify'] and args.cores:
-        pandarallel.initialize(progress_bar=True, nb_workers = args.cores)
-    else:
-        pandarallel.initialize(progress_bar=True) #, nb_workers = args.cores)
-
     mode = args.mode
+    if mode not in ['train_classifier', 'classify']:
+        if args.cores:
+            pandarallel.initialize(progress_bar=True, nb_workers = args.cores)
+        else:
+            pandarallel.initialize(progress_bar=True) #, nb_workers = args.cores)
+
     try:
         modes[mode]
     except KeyError:
-        raise Exception('Invalid mode provided: {} \nMode must be one of {}'.format(mode, str(modes.keys())))
+        raise KeyError('Invalid mode provided: {} \nMode must be one of {}'.format(mode, str(modes.keys())))
 
     modes[mode].main(args)
