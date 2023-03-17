@@ -16,8 +16,7 @@ def match_variants_to_filenames(df, data_dirs):
         for filename, region in files:
             if region[0] == chrm and region[1] <= pos and region[2] > pos:
                 return filename
-        else:
-            raise Error('Variant does not fit in any region')
+        raise RuntimeError('Variant does not fit in any region: {} {}'.format(chrm, pos))
 
     df['filename'] = df.apply(lambda x: get_file(x['chrm'], x['pos']), axis=1)
     return df
