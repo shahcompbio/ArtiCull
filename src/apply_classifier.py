@@ -2,13 +2,14 @@ import argparse
 import pickle
 import pandas as pd
 import sys
+import os
 
 def main(args):
     validate_arguments(args)
     print("1. Loading model from: {}".format(args.model_dir))
     model, scaler = load_model(args.model_dir)
-    print("2. Loading data from: {}".format(args.input_file))
-    df, input_data = get_input_data(args.input_file, scaler)
+    print("2. Loading data from: {}".format(args.features))
+    df, input_data = get_input_data(args.features, scaler)
     print("3. Predicting")
     labels, probs = predict(input_data, model)
     print("4. Writing results to: {}".format(args.output_dir))
@@ -33,7 +34,7 @@ def load_model(model_dir):
 def get_input_data(input_file, scaler):
     df = pd.read_table(input_file)
 
-    features = [c for c in df.columns if c.starts_with('f_')]
+    features = [c for c in df.columns if c.startswith('f_')]
     data = df[features].values
 
     scaled_data = scaler.transform(data)
