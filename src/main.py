@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
 
     args = parser.parse_args()
-    if args.cores:
+    if mode not in ['train_classifier', 'classify'] and args.cores:
         pandarallel.initialize(progress_bar=True, nb_workers = args.cores)
     else:
         pandarallel.initialize(progress_bar=True) #, nb_workers = args.cores)
