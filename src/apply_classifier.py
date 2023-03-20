@@ -55,7 +55,7 @@ def add_parser_arguments(parser):
     parser.add_argument(dest='output_dir', type = str, help = '<Required> Output directory')
     parser.add_argument(dest='model_dir', type = str, help = '<Required> Directory containing model.pkl and scaler.plk')
     
-    DEFAULT_CHUNKSIZE = 2000
+    DEFAULT_CHUNKSIZE = 5000
     parser.add_argument('--chunksize', type = int, default = DEFAULT_CHUNKSIZE, required = False,
                         help = F'<Optional> Number of rows per worker (default {DEFAULT_CHUNKSIZE})')
 
