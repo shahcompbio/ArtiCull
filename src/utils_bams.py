@@ -2,20 +2,25 @@ import functools
 import os
 import pysam
 
+
 def match_variants_to_filenames(df, data_dirs):
     # Could be shared with extract features?
     """
     Bam files are assumed to be merged and in region format. Thus, for each variant
     we match it to the appropriate file that contains that locus
     """
+    def get_region(f):
+        v = f.strip().split('.')[0].split('_')[-1].split('-')
+        return (v[0], int(v[1]), int(v[2]))
 
-    files = [(f, f.strip().split('.')[0].split('-')) for f in os.listdir(data_dirs[0]) if f.endswith('.bam')]
-    files = [(filename, (region[0], int(region[1]), int(region[2]))) for filename, region in files]
+    files = [(f, get_region(f)) for f in os.listdir(data_dirs[0]) if f.endswith('.bam')]
+
+    #files = [(filename, (region[0], int(region[1]), int(region[2]))) for filename, region in files]
 
     def get_file(chrm, pos):
         for filename, region in files:
             if region[0] == chrm and region[1] <= pos and region[2] > pos:
-                return filename
+                return "{}-{}-{}.bam".format(region[0], str(region[1]), str(region[2]))
         raise RuntimeError('Variant does not fit in any region: {} {}'.format(chrm, pos))
 
     df['filename'] = df.apply(lambda x: get_file(x['chrm'], x['pos']), axis=1)
@@ -24,17 +29,28 @@ def match_variants_to_filenames(df, data_dirs):
 @functools.lru_cache # memoizes
 def get_sam(data_dir, filename):
     # Could be shared with extract features?
-    return pysam.AlignmentFile(os.path.join(data_dir, filename), "rb")
+    pysam.set_verbosity(0)
+    try:
+        return pysam.AlignmentFile(os.path.join(data_dir, filename), "rb")
+    except:
+
+        real_filename = [f for f in os.listdir(data_dir) if f.endswith(filename)][0]
+        return pysam.AlignmentFile(os.path.join(data_dir, real_filename), "rb")
 
 def generate_reads(samfile, x):
     # Could be shared with extract features?
     chrm, pos, ref, alt = x['chrm'], x['pos'], x['ref_allele'], x['alt_allele']
+    try:
+        for pileupcolumn in samfile.pileup(chrm, pos-1, pos+1, min_base_quality=20, min_mapping_quality=0):
+            if pileupcolumn.pos != pos-1: continue
+            for i, pileupread in enumerate(pileupcolumn.pileups):
+                if pileupread.is_del or pileupread.is_refskip: continue
+                allele = pileupread.alignment.query_sequence[pileupread.query_position]
+                if allele != alt and allele != ref: continue
 
-    for pileupcolumn in samfile.pileup(chrm, pos-1, pos+1, min_base_quality=20, min_mapping_quality=0):
-        if pileupcolumn.pos != pos-1: continue
-        for i, pileupread in enumerate(pileupcolumn.pileups):
-            if pileupread.is_del or pileupread.is_refskip: continue
-            allele = pileupread.alignment.query_sequence[pileupread.query_position]
-            if allele != alt and allele != ref: continue
-
-            yield pileupread, allele == alt
+                yield pileupread, allele == alt
+    except Exception as e:
+        with open("Errorlog.txt", 'w') as out:
+            out.write(str(x)+"\n")
+            out.write(str(e)+"\n")
+        raise
