@@ -28,17 +28,18 @@ def match_variants_to_filenames(df, data_dirs):
 
 @functools.lru_cache # memoizes
 def get_sam(data_dir, filename):
-    # Could be shared with extract features?
+
     pysam.set_verbosity(0)
+
+    ## TODO This is not a great way to handle things. Should probably switch to taking as input a metadata file which
+    ## maps regions to filenames and all that logic can be handled externally in a (potentially) sample specific way
     try:
         return pysam.AlignmentFile(os.path.join(data_dir, filename), "rb")
     except:
-
-        real_filename = [f for f in os.listdir(data_dir) if f.endswith(filename)][0]
+        real_filename = [f for f in os.listdir(data_dir) if f.endswith("_"+filename)][0]
         return pysam.AlignmentFile(os.path.join(data_dir, real_filename), "rb")
 
 def generate_reads(samfile, x):
-    # Could be shared with extract features?
     chrm, pos, ref, alt = x['chrm'], x['pos'], x['ref_allele'], x['alt_allele']
     try:
         for pileupcolumn in samfile.pileup(chrm, pos-1, pos+1, min_base_quality=20, min_mapping_quality=0):
