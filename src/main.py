@@ -29,7 +29,7 @@ def setup_module_arguments(parser):
     args = parser.parse_args()
     mode = args.mode
 
-    if mode not in ['train_classifier', 'apply_classifier']:
+    if mode not in ['train_classifier', 'classify']:
         from pandarallel import pandarallel
         progress_bar = mode != 'classify'
         if args.cores:
