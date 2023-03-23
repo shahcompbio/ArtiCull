@@ -14,6 +14,7 @@ def main(args):
 
     nlines = sum(1 for _ in open(args.features, 'r'))-1
 
+    # TODO: move out
     if args.cores: ncores = args.cores
     else:
         import psutil
@@ -21,15 +22,16 @@ def main(args):
 
     df_reader = pd.read_table(args.features, chunksize=args.chunksize)
     for i, df in enumerate(df_reader):
-        print('\r\t{}/{} variants completed'.format(i*args.chunksize, nlines), end = '')        
+        print('\r\t{}/{} variants completed'.format(i*args.chunksize, nlines), end = '')
         first = (i == 0)
         process_chunk(df, model, scaler, args.output_dir, ncores, first)
     print('\r\t{}/{} variants completed'.format(nlines, nlines), end = '')
 
 def process_chunk(df, model, scaler, output_dir, ncores, first):
-    input_data = scale_data(df, scaler)
-    labels, probs = predict(df, input_data, model, ncores)
-    write_output_chunk(df, labels, probs, output_dir, first)
+    orig_df = df
+    input_data = scale_data(df.dropna(), scaler)
+    probs = predict(df.dropna(), input_data, model, ncores)
+    write_output_chunk(df, probs, output_dir, first)
 
 def scale_data(df, scaler):
     features = [c for c in df.columns if c.startswith('f_')]
@@ -38,12 +40,12 @@ def scale_data(df, scaler):
     scaled_data = scaler.transform(data)
     return scaled_data
 
-def write_output_chunk(df, labels, probs, output_dir, first):
-    df['temp'] = labels
-    df['result'] = df['temp'].apply(lambda x: 'PASS' if x else "ARTIFACT")
-    df['prob'] = probs
+def write_output_chunk(df, probs, output_dir, first):
+    df['prob_artifact'] = probs
+    df['result'] = df['prob_artifact'].apply(lambda x: 'PASS' if x < 0.5 else "ARTIFACT" if x >= 0.5 else "SKIP")
+    df['result'] = df['result'].fillna('SKIP')
 
-    out_df = df[['chrm', 'pos', 'result', 'prob']]
+    out_df = df[['chrm', 'pos', 'result', 'prob_artifact']]
     out_file = os.path.join(output_dir, 'result.tsv')
     if first:
         out_df.to_csv(out_file, sep='\t', index=False)
@@ -54,7 +56,7 @@ def add_parser_arguments(parser):
     parser.add_argument(dest='features', type = str, help = '<Required> Input file containing variant features')
     parser.add_argument(dest='output_dir', type = str, help = '<Required> Output directory')
     parser.add_argument(dest='model_dir', type = str, help = '<Required> Directory containing model.pkl and scaler.plk')
-    
+
     DEFAULT_CHUNKSIZE = 5000
     parser.add_argument('--chunksize', type = int, default = DEFAULT_CHUNKSIZE, required = False,
                         help = F'<Optional> Number of rows per worker (default {DEFAULT_CHUNKSIZE})')
@@ -84,10 +86,9 @@ def predict(df, input_data, model, ncores):
 
     with Pool(ncores) as p:
         results = p.map(predict_task, tasks)
-    
+
     probs = np.concatenate(results)
-    labels = [p < 0.5 for p in probs]
-    return labels, probs
+    return pd.Series(data = probs, index = df.index)
 
 def predict_task(params):
     model, data = params
