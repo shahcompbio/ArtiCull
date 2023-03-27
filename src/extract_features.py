@@ -84,13 +84,14 @@ def extract_read_features(df, data_dirs):
         # Do reads have the same start/end site? -- how to measure this
         # Read support in normal track -- need bam
 
+        mate_mapped = mean([read.alignment.mate_is_mapped for read in alt_reads])
+        directionality = mean([read.alignment.is_forward for read in alt_reads])
 
-
-        return var_length, num_mm, softclip, mapq, tlen, num_ins, num_del, dist_readend, start_variance, end_variance#, tot
+        return var_length, num_mm, softclip, mapq, tlen, num_ins, num_del, dist_readend, start_variance, end_variance, mate_mapped, directionality#, tot
 
     df = match_variants_to_filenames(df, data_dirs)
     prog = update_progress(len(df))
-    features = ['f_var_length', 'f_nm', 'f_softclip', 'f_mapq', 'f_tlen', 'f_num_ins', 'f_num_del', 'f_dist_readend', 'f_start_std', 'f_end_std'] #, 'f_tot']
+    features = ['f_var_length', 'f_nm', 'f_softclip', 'f_mapq', 'f_tlen', 'f_num_ins', 'f_num_del', 'f_dist_readend', 'f_start_std', 'f_end_std', 'f_mate_mapped', 'f_directionality'] #, 'f_tot']
 
     df[features] = df.parallel_apply(lambda x: extract_single_variant_features(x), axis=1, result_type="expand")
 
