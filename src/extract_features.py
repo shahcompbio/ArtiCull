@@ -69,7 +69,7 @@ def extract_read_features(df, data_dirs):
         mapq = mean([read.alignment.mapping_quality for read in alt_reads])
         num_ins = mean([read.alignment.get_cigar_stats()[0][1] for read in alt_reads ])
         num_del = mean([read.alignment.get_cigar_stats()[0][2] for read in alt_reads ])
-        #dist_readend =
+        dist_readend = mean([min(read.query_position, len(read.alignment.query_sequence) -  read.query_position)  for read in alt_reads])
         # P value based on read directionality (this is binomial -- need to check what happens for overlap)
         # Distance to read end
         # Do reads have the same start/end site? -- how to measure this
@@ -77,11 +77,11 @@ def extract_read_features(df, data_dirs):
 
 
 
-        return var_length, num_mm, softclip, mapq, tlen, num_ins, num_del#, tot
+        return var_length, num_mm, softclip, mapq, tlen, num_ins, num_del, dist_readend#, tot
 
     df = match_variants_to_filenames(df, data_dirs)
     prog = update_progress(len(df))
-    features = ['f_var_length', 'f_nm', 'f_softclip', 'f_mapq', 'f_tlen', 'f_num_ins', 'f_num_del'] #, 'f_tot']
+    features = ['f_var_length', 'f_nm', 'f_softclip', 'f_mapq', 'f_tlen', 'f_num_ins', 'f_num_del', 'f_dist_readend'] #, 'f_tot']
 
     df[features] = df.parallel_apply(lambda x: extract_single_variant_features(x), axis=1, result_type="expand")
 
