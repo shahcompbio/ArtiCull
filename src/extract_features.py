@@ -21,7 +21,7 @@ def main(args):
     print("2. Extracting Read Features from: {}".format(bam_dirs))
     df = extract_read_features(df, bam_dirs)
     print("\n3. Extracting Mappability from: {}\n".format(mappability) )
-    #df = run_mappability(df, mappability)
+    df = run_mappability(df, mappability)
     print("4. Outputting Result to: {}\n".format(output))
     df.to_csv(output, sep = '\t', index=False)
 

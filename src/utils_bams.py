@@ -40,7 +40,7 @@ def get_sam(data_dir, filename):
 def generate_reads(samfile, x):
     chrm, pos, ref, alt = x['chrm'], x['pos'], x['ref_allele'], x['alt_allele']
 
-    for pileupcolumn in samfile.pileup(chrm, pos-1, pos+1, min_base_quality=20, min_mapping_quality=0):
+    for pileupcolumn in samfile.pileup(chrm, pos-1, pos+1, min_base_quality=20, min_mapping_quality=0, ignore_orphans=False):
         if pileupcolumn.pos != pos-1: continue
         for i, pileupread in enumerate(pileupcolumn.pileups):
             if pileupread.is_del or pileupread.is_refskip: continue
