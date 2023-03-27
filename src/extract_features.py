@@ -62,17 +62,26 @@ def extract_read_features(df, data_dirs):
         alt_reads = [read for read, is_alt in reads if is_alt]
 
         var_length = mean([len(read.alignment.query_sequence) for read in alt_reads])
-        aligned_length = mean([read.alignment.get_cigar_stats()[0][0] for read in alt_reads])
-        nm = mean([read.alignment.get_cigar_stats()[0][10] for read in alt_reads])
-        softclip = mean([read.alignment.get_cigar_stats()[0][4] for read in alt_reads])
-        mapq = mean([read.alignment.mapping_quality for read in alt_reads])
         tlen = mean([abs(read.alignment.template_length) for read in alt_reads])
+        #aligned_length = mean([read.alignment.get_cigar_stats()[0][0] for read in alt_reads])
+        num_mm = mean([read.alignment.get_cigar_stats()[0][10] for read in alt_reads])
+        softclip = mean([read.alignment.get_cigar_stats()[0][4] > 0 for read in alt_reads])
+        mapq = mean([read.alignment.mapping_quality for read in alt_reads])
+        num_ins = mean([read.alignment.get_cigar_stats()[0][1] for read in alt_reads ])
+        num_del = mean([read.alignment.get_cigar_stats()[0][2] for read in alt_reads ])
+        #dist_readend =
+        # P value based on read directionality (this is binomial -- need to check what happens for overlap)
+        # Distance to read end
+        # Do reads have the same start/end site? -- how to measure this
+        # Read support in normal track -- need bam
 
-        return var_length, aligned_length, nm, softclip, mapq, tlen#, tot
+
+
+        return var_length, num_mm, softclip, mapq, tlen, num_ins, num_del#, tot
 
     df = match_variants_to_filenames(df, data_dirs)
     prog = update_progress(len(df))
-    features = ['f_var_length', 'f_aligned_length', 'f_nm', 'f_softclip', 'f_mapq', 'f_tlen'] #, 'f_tot']
+    features = ['f_var_length', 'f_nm', 'f_softclip', 'f_mapq', 'f_tlen', 'f_num_ins', 'f_num_del'] #, 'f_tot']
 
     df[features] = df.parallel_apply(lambda x: extract_single_variant_features(x), axis=1, result_type="expand")
 
