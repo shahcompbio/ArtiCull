@@ -2,6 +2,7 @@ import os
 import argparse
 import subprocess
 import tempfile
+import numpy
 
 
 
@@ -62,17 +63,35 @@ def extract_read_features(df, data_dirs):
         alt_reads = [read for read, is_alt in reads if is_alt]
 
         var_length = mean([len(read.alignment.query_sequence) for read in alt_reads])
-        aligned_length = mean([read.alignment.get_cigar_stats()[0][0] for read in alt_reads])
-        nm = mean([read.alignment.get_cigar_stats()[0][10] for read in alt_reads])
-        softclip = mean([read.alignment.get_cigar_stats()[0][4] for read in alt_reads])
-        mapq = mean([read.alignment.mapping_quality for read in alt_reads])
         tlen = mean([abs(read.alignment.template_length) for read in alt_reads])
+        #aligned_length = mean([read.alignment.get_cigar_stats()[0][0] for read in alt_reads])
+        num_mm = mean([read.alignment.get_cigar_stats()[0][10] for read in alt_reads])
+        softclip = mean([read.alignment.get_cigar_stats()[0][4] > 0 for read in alt_reads])
+        mapq = mean([read.alignment.mapping_quality for read in alt_reads])
+        num_ins = mean([read.alignment.get_cigar_stats()[0][1] for read in alt_reads ])
+        num_del = mean([read.alignment.get_cigar_stats()[0][2] for read in alt_reads ])
+        dist_readend = mean([min(read.query_position, len(read.alignment.query_sequence) -  read.query_position)  for read in alt_reads])
 
-        return var_length, aligned_length, nm, softclip, mapq, tlen#, tot
+        def get_aligned_block(read):
+            blocks = read.alignment.get_blocks()
+            for block in blocks:
+                if x['pos']>= block[0] and x['pos'] <= block[1]: return block
+            raise Exception()
+
+        start_variance = numpy.std([get_aligned_block(read)[0] for read in alt_reads], ddof = 1) # bessel's correction
+        end_variance = numpy.std([get_aligned_block(read)[1] for read in alt_reads], ddof = 1)
+        # P value based on read directionality (this is binomial -- need to check what happens for overlap
+        # Do reads have the same start/end site? -- how to measure this
+        # Read support in normal track -- need bam
+
+        mate_mapped = mean([read.alignment.mate_is_mapped for read in alt_reads])
+        directionality = mean([read.alignment.is_forward for read in alt_reads])
+
+        return var_length, num_mm, softclip, mapq, tlen, num_ins, num_del, dist_readend, start_variance, end_variance, mate_mapped, directionality#, tot
 
     df = match_variants_to_filenames(df, data_dirs)
     prog = update_progress(len(df))
-    features = ['f_var_length', 'f_aligned_length', 'f_nm', 'f_softclip', 'f_mapq', 'f_tlen'] #, 'f_tot']
+    features = ['f_var_length', 'f_nm', 'f_softclip', 'f_mapq', 'f_tlen', 'f_num_ins', 'f_num_del', 'f_dist_readend', 'f_start_std', 'f_end_std', 'f_mate_mapped', 'f_directionality'] #, 'f_tot']
 
     df[features] = df.parallel_apply(lambda x: extract_single_variant_features(x), axis=1, result_type="expand")
 
