@@ -92,7 +92,7 @@ def read_input_data(filename):
             feature_file, label_file = line.strip().split('\t')
             features = pd.read_table(feature_file, sep='\t')
             labels = pd.read_table(label_file, sep='\t')
-            labels = labels[['chrm', 'pos', 'assignment', 'responsibilities']]
+            labels = labels[['chrm', 'pos', 'assignment']] #x, 'responsibilities']]
             df = features.merge(labels, on = ['chrm', 'pos'], how = 'inner')
             df['sample'] = i
             dfs.append(df)
@@ -101,9 +101,9 @@ def read_input_data(filename):
     feature_cols = [c for c in df.columns if c.startswith('f_')]
     data = df[feature_cols].values
     labels = df.assignment.copy()
-    labels[(df.assignment == 1) | (df.assignment == 2)] = -1 # labels[(df.assignment == 1) | (df.assignment == 2)].apply(lambda x: -1 if random() < 0.9 else 0)
-    labels[df.assignment == 0 ] = 1
-    labels[df.assignment == 3] = 0
+    #labels[(df.assignment == 1) | (df.assignment == 2)] = -1 # labels[(df.assignment == 1) | (df.assignment == 2)].apply(lambda x: -1 if random() < 0.9 else 0)
+    #labels[df.assignment == 0 ] = 1
+    #labels[df.assignment == 3] = 0
 
     return data, labels
 

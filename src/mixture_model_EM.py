@@ -61,7 +61,7 @@ def compute_responsibilities(mut, dists, weights):
     r.append(weights[1]*a*b)
 
     # Private Clone 2
-    a= binom_rv(t1, eps).pmf(v1)
+    a = binom_rv(t1, eps).pmf(v1)
     b = compute_integral(Z_2, v2, t2, c2)
     r.append(weights[2]*a*b)
 
@@ -70,7 +70,8 @@ def compute_responsibilities(mut, dists, weights):
     b = compute_integral(Z_a1, v2, t2, c2)
     r.append(weights[3]*a*b)
 
-    return r
+
+    return [v/sum(r) for v in r]
 
 @functools.lru_cache
 def binom_coeff(n, x):
