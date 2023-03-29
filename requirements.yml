@@ -1,9 +1,7 @@
-name: snv_filter
+name: experimental5
 channels:
 - conda-forge
 - bioconda
-- anaconda
-- defaults
 dependencies:
 - numpy
 - scipy
