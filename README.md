@@ -17,7 +17,7 @@
 Dependencies are listed in the `requirements.yml` file. To create and activate a new conda environment with these dependencies,
 run
 ```
-conda create -n snv_filter -f requirements.yml
+conda env create -n snv_filter -f requirements.yml
 conda activate snv_filter
 ```
 If requirements change, you can update environment using
