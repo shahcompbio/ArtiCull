@@ -4,14 +4,16 @@ import os
 def setup_module_arguments(parser):
     import mixture_model_preprocessing
     import extract_features
-    import mixture_model
+    #import mixture_model
+    import mix_model_new
     import train_classifier
     import apply_classifier
 
     modes = {
             "extract_features" : extract_features,
             "mm_preprocessing" : mixture_model_preprocessing,
-            "mixture_model" : mixture_model,
+            #"mixture_model" : mixture_model,
+            "mixture_model" : mix_model_new,
             "train" : train_classifier,
             "classify": apply_classifier
             }
@@ -33,9 +35,9 @@ def setup_module_arguments(parser):
         from pandarallel import pandarallel
         progress_bar = mode != 'classify'
         if args.cores:
-            pandarallel.initialize(progress_bar=progress_bar, nb_workers = args.cores)
+            pandarallel.initialize(progress_bar=progress_bar, nb_workers = args.cores, use_memory_fs=True)
         else:
-            pandarallel.initialize(progress_bar=progress_bar) #, nb_workers = args.cores)
+            pandarallel.initialize(progress_bar=progress_bar, use_memory_fs=False) #, nb_workers = args.cores)
 
     try:
         modes[mode]

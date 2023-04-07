@@ -23,14 +23,16 @@ def match_variants_to_filenames(df, data_dirs):
                 return "{}-{}-{}.bam".format(region[0], str(region[1]), str(region[2]))
         raise RuntimeError('Variant does not fit in any region: {} {}'.format(chrm, pos))
 
-    df['filename'] = df.apply(lambda x: get_file(x['chrm'], x['pos']), axis=1)
+    try:
+        temp = df.apply(lambda x: get_file(x['chrm'], x['pos']), axis=1)
+        df['filename'] = temp
+    except:
+        print(temp)
     return df
 
 @functools.lru_cache # memoizes
 def get_sam(data_dir, filename):
-
     pysam.set_verbosity(0)
-
     ## TODO This is not a great way to handle things. Should probably switch to taking as input a metadata file which
     ## maps regions to filenames and all that logic can be handled externally in a (potentially) sample specific way
     try:
@@ -41,17 +43,12 @@ def get_sam(data_dir, filename):
 
 def generate_reads(samfile, x):
     chrm, pos, ref, alt = x['chrm'], x['pos'], x['ref_allele'], x['alt_allele']
-    try:
-        for pileupcolumn in samfile.pileup(chrm, pos-1, pos+1, min_base_quality=20, min_mapping_quality=0):
-            if pileupcolumn.pos != pos-1: continue
-            for i, pileupread in enumerate(pileupcolumn.pileups):
-                if pileupread.is_del or pileupread.is_refskip: continue
-                allele = pileupread.alignment.query_sequence[pileupread.query_position]
-                if allele != alt and allele != ref: continue
 
-                yield pileupread, allele == alt
-    except Exception as e:
-        with open("Errorlog.txt", 'w') as out:
-            out.write(str(x)+"\n")
-            out.write(str(e)+"\n")
-        raise
+    for pileupcolumn in samfile.pileup(chrm, pos-1, pos+1, min_base_quality=20, min_mapping_quality=0, ignore_orphans=False):
+        if pileupcolumn.pos != pos-1: continue
+        for i, pileupread in enumerate(pileupcolumn.pileups):
+            if pileupread.is_del or pileupread.is_refskip: continue
+            allele = pileupread.alignment.query_sequence[pileupread.query_position]
+            if allele != alt and allele != ref: continue
+
+            yield pileupread, allele == alt
