@@ -23,7 +23,11 @@ def match_variants_to_filenames(df, data_dirs):
                 return "{}-{}-{}.bam".format(region[0], str(region[1]), str(region[2]))
         raise RuntimeError('Variant does not fit in any region: {} {}'.format(chrm, pos))
 
-    df['filename'] = df.apply(lambda x: get_file(x['chrm'], x['pos']), axis=1)
+    try:
+        temp = df.apply(lambda x: get_file(x['chrm'], x['pos']), axis=1)
+        df['filename'] = temp
+    except:
+        print(temp)
     return df
 
 @functools.lru_cache # memoizes
