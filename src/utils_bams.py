@@ -52,3 +52,26 @@ def generate_reads(samfile, x):
             if allele != alt and allele != ref: continue
 
             yield pileupread, allele == alt
+
+def generate_reads_w_normal(samfile, x, labels):
+    chrm, pos, ref, alt = x['chrm'], x['pos'], x['ref_allele'], x['alt_allele']
+    for pileupcolumn in samfile.pileup(chrm, pos-1, pos+1, min_base_quality=20, min_mapping_quality=0, ignore_orphans=False):
+        if pileupcolumn.pos != pos-1: continue
+        for i, pileupread in enumerate(pileupcolumn.pileups):
+            if pileupread.is_del or pileupread.is_refskip: continue
+            allele = pileupread.alignment.query_sequence[pileupread.query_position]
+            if allele != alt and allele != ref: continue
+
+            RG = pileupread.alignment.get_tag('RG')
+            cell_id = '_'.join(RG.split('_')[1:-2])
+
+            try:
+                is_hq_normal = labels.loc[cell_id].is_high_quality_normal_cell
+            except:
+                is_hq_normal = False
+
+            #A108832A_
+            #SPECTRUM-OV-045_S1_INFRACOLIC_OMENTUM-A108832A-R22-C20
+            #_H7CNYCCX2_7
+
+            yield pileupread, allele == alt, is_hq_normal
