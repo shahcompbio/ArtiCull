@@ -12,6 +12,9 @@ pd.options.mode.chained_assignment = None #Suppress SettingWithACopy Warning
 from utils_io import get_variants, update_progress
 from utils_bams import match_variants_to_filenames,  generate_reads_w_normal,  get_sam
 
+from scipy.stats import binomtest
+import math
+
 def main(args):
     validate_arguments(args)
     maf, bam_dirs, mappability, output, cell_labels, patient_id = args.maf, args.bam_dirs, args.map_bedgraph, args.output, args.cell_labels, args.patient_id
@@ -54,6 +57,10 @@ def validate_arguments(args):
 #def get_sam(data_dir, filename):
 #    # Could be shared with extract features?
 #    return pysam.AlignmentFile(os.path.join(data_dir, filename), "rb")
+import functools
+@functools.lru_cache # memoizes
+def binomtest_memo(k, n):
+    return math.log(binomtest(k, n).pvalue)
 
 def extract_read_features(df, data_dirs, cell_labels):
 
@@ -71,7 +78,7 @@ def extract_read_features(df, data_dirs, cell_labels):
         alt_reads = [read for read, is_alt, is_norm in reads if is_alt]
 
         var_length = mean([len(read.alignment.query_sequence) for read in alt_reads])
-        tlen = mean([abs(read.alignment.template_length) for read in alt_reads])
+        tlen = min(1000, mean([abs(read.alignment.template_length) for read in alt_reads]))
         #aligned_length = mean([read.alignment.get_cigar_stats()[0][0] for read in alt_reads])
         num_mm = mean([read.alignment.get_cigar_stats()[0][10] for read in alt_reads])
         softclip = mean([read.alignment.get_cigar_stats()[0][4] > 0 for read in alt_reads])
@@ -94,7 +101,12 @@ def extract_read_features(df, data_dirs, cell_labels):
         # Read support in normal track -- need bam
 
         mate_mapped = mean([read.alignment.mate_is_mapped for read in alt_reads])
-        directionality = mean([read.alignment.is_forward for read in alt_reads])
+        forward = sum([read.alignment.is_forward for read in alt_reads])
+        try:
+            directionality = max(-20, binomtest_memo(forward, len(alt_reads)))
+        except:
+            directionality = 0
+
 
         return var_length, num_mm, softclip, mapq, tlen, num_ins, num_del, dist_readend, start_variance, end_variance, mate_mapped, directionality, prop_normal#, tot
 

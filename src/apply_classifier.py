@@ -24,6 +24,7 @@ def main(args):
     for i, df in enumerate(df_reader):
         print('\r\t{}/{} variants completed'.format(i*args.chunksize, nlines), end = '')
         first = (i == 0)
+        df['f_prop_normal'] = df['f_prop_normal'].fillna(0)
         process_chunk(df, model, scaler, args.output_dir, ncores, first)
     print('\r\t{}/{} variants completed'.format(nlines, nlines), end = '')
 
