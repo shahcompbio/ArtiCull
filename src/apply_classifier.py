@@ -24,6 +24,7 @@ def main(args):
     for i, df in enumerate(df_reader):
         print('\r\t{}/{} variants completed'.format(i*args.chunksize, nlines), end = '')
         first = (i == 0)
+        df['f_prop_normal'] = df['f_prop_normal'].fillna(0)
         process_chunk(df, model, scaler, args.output_dir, ncores, first)
     print('\r\t{}/{} variants completed'.format(nlines, nlines), end = '')
 
@@ -45,7 +46,7 @@ def write_output_chunk(df, probs, output_dir, first):
     df['result'] = df['prob_artifact'].apply(lambda x: 'PASS' if x < 0.5 else "ARTIFACT" if x >= 0.5 else "SKIP")
     df['result'] = df['result'].fillna('SKIP')
 
-    out_df = df[['chrm', 'pos', 'result', 'prob_artifact']]
+    out_df = df[['chrm', 'pos',  'ref_allele', 'alt_allele', 'result', 'prob_artifact']]
     out_file = os.path.join(output_dir, 'result.tsv')
     if first:
         out_df.to_csv(out_file, sep='\t', index=False)
