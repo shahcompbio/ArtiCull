@@ -1,8 +1,5 @@
 - Update validate_arguments in files that are missing it
 - Move validate arguments call out to main.py
 - Consider error rate in mixture model
-- Handle high-ccf outliers and tetraploidy in mixture model
 - move to logging?
-- Update extract_features to use outputdir
 - Update validate arguments to check if there are any bam files in the bam dirs
-- Update to handle name variations in mergebams
