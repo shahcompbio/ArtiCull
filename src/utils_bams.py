@@ -70,8 +70,4 @@ def generate_reads_w_normal(samfile, x, labels):
             except:
                 is_hq_normal = False
 
-            #A108832A_
-            #SPECTRUM-OV-045_S1_INFRACOLIC_OMENTUM-A108832A-R22-C20
-            #_H7CNYCCX2_7
-
             yield pileupread, allele == alt, is_hq_normal
