@@ -46,7 +46,7 @@ def write_output_chunk(df, probs, output_dir, first):
     df['result'] = df['prob_artifact'].apply(lambda x: 'PASS' if x < 0.5 else "ARTIFACT" if x >= 0.5 else "SKIP")
     df['result'] = df['result'].fillna('SKIP')
 
-    out_df = df[['chrm', 'pos', 'result', 'prob_artifact']]
+    out_df = df[['chrm', 'pos',  'ref_allele', 'alt_allele', 'result', 'prob_artifact']]
     out_file = os.path.join(output_dir, 'result.tsv')
     if first:
         out_df.to_csv(out_file, sep='\t', index=False)
