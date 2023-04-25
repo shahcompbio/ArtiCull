@@ -52,15 +52,10 @@ def main(args):
     # df = df_orig.sample(n=1000, random_state = 1)
     validate_arguments(args)
     input_file, output_dir, clone1, clone2 = args.input_file, args.output_dir, args.clone1, args.clone2
-
     df = process_df(input_file, clone1, clone2)
-
     df['assignment'] = df.parallel_apply(get_assignment, axis=1)
-
     df.to_csv("{}/assignments.tsv".format(output_dir), sep='\t', index=False)
-
     print(df.groupby('assignment').count())
-
     create_plot(df, clone1, clone2, output_dir)
 
 def add_parser_arguments(parser):
@@ -71,8 +66,11 @@ def add_parser_arguments(parser):
 
 
 def validate_arguments(args):
-    #TODO
-    pass
+    for arg in vars(args):
+        print(arg,":\t", getattr(args, arg))
+
+    assert os.path.isfile(args.input_file)
+    assert os.access(args.output_dir, os.W_OK)
 
 def process_df(input_file, clone1, clone2):
     input = pd.read_table(input_file)

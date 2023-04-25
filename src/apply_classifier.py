@@ -14,7 +14,6 @@ def main(args):
 
     nlines = sum(1 for _ in open(args.features, 'r'))-1
 
-    # TODO: move out
     if args.cores: ncores = args.cores
     else:
         import psutil
@@ -63,7 +62,15 @@ def add_parser_arguments(parser):
                         help = F'<Optional> Number of rows per worker (default {DEFAULT_CHUNKSIZE})')
 
 def validate_arguments(args):
-    pass
+    for arg in vars(args):
+        print(arg,':\t', getattr(args, arg))
+
+    assert os.path.isfile(args.features)
+    assert os.path.isdir(args.model_dir)
+    assert os.path.isfile(os.path.join(args.model_dir, 'model.pkl'))
+    assert os.path.isfile(os.path.join(args.model_dir, 'scaler.pkl'))
+    assert os.path.isdir(args.output_dir)
+    assert os.access(args.output_dir, os.W_OK)
 
 def load_model(model_dir):
     with open(os.path.join(model_dir, 'model.pkl'), 'rb') as f:

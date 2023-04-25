@@ -76,7 +76,7 @@ def add_parser_arguments(parser):
 def validate_arguments(args):
     # Checks if input files exist and if output files are in directories that exist and can be written to
     for arg in vars(args):
-        print(arg, getattr(args, arg))
+        print(arg, ':\t', getattr(args, arg))
 
     assert os.path.isfile(args.file_list)
 
