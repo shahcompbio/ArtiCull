@@ -24,20 +24,18 @@ def setup_module_arguments(parser):
     for mode in modes:
         subparser = subparsers.add_parser(mode)
         modes[mode].add_parser_arguments(subparser)
-        #if mode not in ['train_classifier', 'classify']:
         subparser.add_argument('--cores', '-j', default = None, type = int, \
             help = 'Number of workers to use for parallelization. <Default> the number of available cores')
 
     args = parser.parse_args()
     mode = args.mode
 
-    if mode not in ['train_classifier', 'classify']:
-        from pandarallel import pandarallel
-        progress_bar = mode != 'classify'
-        if args.cores:
-            pandarallel.initialize(progress_bar=progress_bar, nb_workers = args.cores, use_memory_fs=True)
-        else:
-            pandarallel.initialize(progress_bar=progress_bar, use_memory_fs=False) #, nb_workers = args.cores)
+    from pandarallel import pandarallel
+    progress_bar = mode != 'classify'
+    if args.cores:
+        pandarallel.initialize(progress_bar=progress_bar, nb_workers = args.cores, use_memory_fs=True)
+    else:
+        pandarallel.initialize(progress_bar=progress_bar, use_memory_fs=False) #, nb_workers = args.cores)
 
     try:
         modes[mode]
