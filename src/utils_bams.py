@@ -15,8 +15,6 @@ def match_variants_to_filenames(df, data_dirs):
 
     files = [(f, get_region(f)) for f in os.listdir(data_dirs[0]) if f.endswith('.bam')]
 
-    #files = [(filename, (region[0], int(region[1]), int(region[2]))) for filename, region in files]
-
     def get_file(chrm, pos):
         for filename, region in files:
             if region[0] == chrm and region[1] <= pos and region[2] > pos:
@@ -30,6 +28,16 @@ def match_variants_to_filenames(df, data_dirs):
         print(temp)
     return df
 
+
+def is_normal(pileupread, labels):
+    RG = pileupread.alignment.get_tag('RG')
+    cell_id = '_'.join(RG.split('_')[1:-2])
+    try:
+        is_hq_normal = labels.loc[cell_id].is_high_quality_normal_cell
+    except:
+        is_hq_normal = False
+    return is_hq_normal
+
 @functools.lru_cache # memoizes
 def get_sam(data_dir, filename):
     pysam.set_verbosity(0)
@@ -41,33 +49,59 @@ def get_sam(data_dir, filename):
         real_filename = [f for f in os.listdir(data_dir) if f.endswith("_"+filename)][0]
         return pysam.AlignmentFile(os.path.join(data_dir, real_filename), "rb")
 
-def generate_reads(samfile, x):
-    chrm, pos, ref, alt = x['chrm'], x['pos'], x['ref_allele'], x['alt_allele']
+def generate_reads(samfile, x, labels, min_base_quality=20, min_mapping_quality=0):
+    """
+    Gets the reads at a position and reports whether they match the variant allele or not.
 
-    for pileupcolumn in samfile.pileup(chrm, pos-1, pos+1, min_base_quality=20, min_mapping_quality=0, ignore_orphans=False):
-        if pileupcolumn.pos != pos-1: continue
+    Note: only reports reads with given alt or ref alleles and skips other alternate alleles
+    """
+
+    chrm, pos, ref, alt, var_type = x['chrm'], x['pos'], x['ref_allele'], x['alt_allele'], x['var_type']
+
+
+    for pileupcolumn in samfile.pileup(chrm, pos-1, pos+1,
+            min_base_quality=min_base_quality,
+            min_mapping_quality=min_mapping_quality,
+            ignore_orphans=False):
+
+        # Pysam zero-indexes, hence pos-1. It also reports deletions at the reference base before the start
+        # of the deletion, while maf reports them at the first deleted base. Hence pos-2
+        if var_type == 'DEL' and pileupcolumn.pos != pos-2: continue
+        elif var_type != 'DEL' and pileupcolumn.pos != pos-1: continue
+
         for i, pileupread in enumerate(pileupcolumn.pileups):
-            if pileupread.is_del or pileupread.is_refskip: continue
-            allele = pileupread.alignment.query_sequence[pileupread.query_position]
-            if allele != alt and allele != ref: continue
 
-            yield pileupread, allele == alt
+            if var_type == 'SNP':
+                if pileupread.is_del or pileupread.is_refskip: continue
+                allele = pileupread.alignment.query_sequence[pileupread.query_position]
+                if allele != alt and allele != ref: continue
+                yield pileupread, allele == alt, is_normal(pileupread, labels)
 
-def generate_reads_w_normal(samfile, x, labels):
-    chrm, pos, ref, alt = x['chrm'], x['pos'], x['ref_allele'], x['alt_allele']
-    for pileupcolumn in samfile.pileup(chrm, pos-1, pos+1, min_base_quality=20, min_mapping_quality=0, ignore_orphans=False):
-        if pileupcolumn.pos != pos-1: continue
-        for i, pileupread in enumerate(pileupcolumn.pileups):
-            if pileupread.is_del or pileupread.is_refskip: continue
-            allele = pileupread.alignment.query_sequence[pileupread.query_position]
-            if allele != alt and allele != ref: continue
+            elif var_type == 'DNP':
+                if pileupread.is_del or pileupread.is_refskip: continue
+                allele = pileupread.alignment.query_sequence[pileupread.query_position:pileupread.query_position+2]
+                if allele != alt and allele != ref: continue
+                yield pileupread, allele == alt, is_normal(pileupread, labels)
 
-            RG = pileupread.alignment.get_tag('RG')
-            cell_id = '_'.join(RG.split('_')[1:-2])
+            elif var_type == 'DEL':
+                if pileupread.is_refskip:
+                    continue
+                del_length = pileupread.indel
+                if del_length == -len(ref):
+                    yield pileupread, True, is_normal(pileupread, labels)
+                elif del_length == 0:
+                    yield pileupread, False, is_normal(pileupread, labels)
+                else: continue
 
-            try:
-                is_hq_normal = labels.loc[cell_id].is_high_quality_normal_cell
-            except:
-                is_hq_normal = False
-
-            yield pileupread, allele == alt, is_hq_normal
+            elif var_type == 'INS':
+                if pileupread.is_del or pileupread.is_refskip:
+                    continue
+                ins_length= pileupread.indel
+                if ins_length == 0:
+                    yield pileupread, False, is_normal(pileupread, labels)
+                else:
+                    seq_pos = pileupread.query_position
+                    allele = pileupread.alignment.query_sequence[seq_pos+1:seq_pos+pileupread.indel+1]
+                    if allele == alt:
+                        yield pileupread, True, is_normal(pileupread, labels)
+                    else: continue

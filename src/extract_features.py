@@ -10,8 +10,7 @@ import pandas as pd
 pd.options.mode.chained_assignment = None #Suppress SettingWithACopy Warning
 
 from utils_io import get_variants, update_progress
-from utils_bams import match_variants_to_filenames,  generate_reads_w_normal,  get_sam
-
+from utils_bams import match_variants_to_filenames,  generate_reads,  get_sam
 from scipy.stats import binomtest
 import math
 
@@ -71,48 +70,41 @@ def extract_read_features(df, data_dirs, cell_labels):
 
     def extract_single_variant_features(x):
         # Just to print progress
-        #next(prog)
         var_sams = [get_sam(data_dir, x['filename']) for data_dir in data_dirs]
         reads = []
-        for sam in var_sams: reads+=[r for r in generate_reads_w_normal(sam, x, cell_labels)]
+        for sam in var_sams: reads+=[r for r in generate_reads(sam, x, cell_labels)]
         alt_reads = [read for read, is_alt, is_norm in reads if is_alt]
 
         var_length = mean([len(read.alignment.query_sequence) for read in alt_reads])
         tlen = min(1000, mean([abs(read.alignment.template_length) for read in alt_reads]))
-        #aligned_length = mean([read.alignment.get_cigar_stats()[0][0] for read in alt_reads])
         num_mm = mean([read.alignment.get_cigar_stats()[0][10] for read in alt_reads])
         softclip = mean([read.alignment.get_cigar_stats()[0][4] > 0 for read in alt_reads])
         mapq = mean([read.alignment.mapping_quality for read in alt_reads])
         num_ins = mean([read.alignment.get_cigar_stats()[0][1] for read in alt_reads ])
         num_del = mean([read.alignment.get_cigar_stats()[0][2] for read in alt_reads ])
         dist_readend = mean([min(read.query_position, len(read.alignment.query_sequence) -  read.query_position)  for read in alt_reads])
-        prop_normal = mean([is_alt  for read, is_alt, is_norm in reads if is_norm])
+        prop_normal = mean([is_alt for read, is_alt, is_norm in reads if is_norm])
 
         def get_aligned_block(read):
             blocks = read.alignment.get_blocks()
-            for block in blocks:
-                if x['pos']>= block[0] and x['pos'] <= block[1]: return block
-            raise Exception()
+            return blocks[0][0], blocks[-1][1]
 
         start_variance = numpy.std([get_aligned_block(read)[0] for read in alt_reads], ddof = 1) # bessel's correction
         end_variance = numpy.std([get_aligned_block(read)[1] for read in alt_reads], ddof = 1)
-        # P value based on read directionality (this is binomial -- need to check what happens for overlap
-        # Do reads have the same start/end site? -- how to measure this
-        # Read support in normal track -- need bam
 
         mate_mapped = mean([read.alignment.mate_is_mapped for read in alt_reads])
         forward = sum([read.alignment.is_forward for read in alt_reads])
         try:
             directionality = max(-20, binomtest_memo(forward, len(alt_reads)))
         except:
+            # If there's only one alt read
             directionality = 0
-
 
         return var_length, num_mm, softclip, mapq, tlen, num_ins, num_del, dist_readend, start_variance, end_variance, mate_mapped, directionality, prop_normal#, tot
 
     df = match_variants_to_filenames(df, data_dirs)
     prog = update_progress(len(df))
-    features = ['f_var_length', 'f_nm', 'f_softclip', 'f_mapq', 'f_tlen', 'f_num_ins', 'f_num_del', 'f_dist_readend', 'f_start_std', 'f_end_std', 'f_mate_mapped', 'f_directionality', 'f_prop_normal'] #, 'f_tot']
+    features = ['f_mean_len', 'f_mean_tlen', 'f_p_softclip', 'f_mean_mapq', 'f_mean_tlen', 'f_p_ins', 'f_p_del', 'f_mean_readend', 'f_std_start', 'f_std_end', 'f_p_matemapped', 'f_directionality', 'f_p_normal'] #, 'f_tot']
 
     df[features] = df.parallel_apply(lambda x: extract_single_variant_features(x), axis=1, result_type="expand")
 
@@ -156,7 +148,6 @@ def run_mappability(df, mappability):
     try:
         # Close all files since subprocesses will be writing to them
         write_bedfile(df, bed)
-
         intersect_mappability(mappability, bed, bed_sorted, map)
         df = join_mappability(df, map.name)
 

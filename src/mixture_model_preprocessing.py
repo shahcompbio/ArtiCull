@@ -135,8 +135,8 @@ def get_clone_var_counts(df, data_dirs, clonemap, clone_ids):
         var_count = Counter()
         all_count = Counter()
 
-        for c,(r, is_alt) in zip(clones, reads):
-            if is_alt: var_count[c]+=1
+        for c, r in zip(clones, reads):
+            if r[1]: var_count[c]+=1
             all_count[c] += 1
 
         def get_var_data(c):
@@ -172,9 +172,7 @@ def compute_ccfs(df, clone_ids):
     return df
 
 def plot_ccfs(df, output, clone_ids):
-
     sns.set_context('paper', font_scale=1.5)
-
     df_plot = pd.DataFrame()
     for c in clone_ids:
         df_plot[c] = df['ccf_{}'.format(c)]
