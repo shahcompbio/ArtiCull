@@ -4,7 +4,6 @@ import os
 def setup_module_arguments(parser):
     import mixture_model_preprocessing
     import extract_features
-    #import mixture_model
     import mix_model_new
     import train_classifier
     import apply_classifier

@@ -29,8 +29,12 @@ def main(args):
 
 def process_chunk(df, model, scaler, output_dir, ncores, first):
     orig_df = df
-    input_data = scale_data(df.dropna(), scaler)
-    probs = predict(df.dropna(), input_data, model, ncores)
+
+    ###
+    #   TEMPORARY: For now, only classify SNPs. Other models are not implemented
+    ###
+    input_data = scale_data(df[df['var_type'] == 'SNP'].dropna(), scaler)
+    probs = predict(df[df['var_type'] == 'SNP'].dropna(), input_data, model, ncores)
     write_output_chunk(df, probs, output_dir, first)
 
 def scale_data(df, scaler):
