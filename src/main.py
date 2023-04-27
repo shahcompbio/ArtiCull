@@ -11,7 +11,6 @@ def setup_module_arguments(parser):
     modes = {
             "extract_features" : extract_features,
             "mm_preprocessing" : mixture_model_preprocessing,
-            #"mixture_model" : mixture_model,
             "mixture_model" : mix_model_new,
             "train" : train_classifier,
             "classify": apply_classifier

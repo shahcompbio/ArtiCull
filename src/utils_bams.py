@@ -19,7 +19,7 @@ def match_variants_to_filenames(df, data_dirs):
         for filename, region in files:
             if region[0] == chrm and region[1] <= pos and region[2] > pos:
                 return "{}-{}-{}.bam".format(region[0], str(region[1]), str(region[2]))
-        raise RuntimeError('Variant does not fit in any region: {} {}'.format(chrm, pos))
+        return None
 
     try:
         temp = df.apply(lambda x: get_file(x['chrm'], x['pos']), axis=1)
@@ -29,7 +29,9 @@ def match_variants_to_filenames(df, data_dirs):
     return df
 
 
-def is_normal(pileupread, labels):
+def is_normal(pileupread, labels=None):
+    if labels is None: return None
+
     RG = pileupread.alignment.get_tag('RG')
     cell_id = '_'.join(RG.split('_')[1:-2])
     try:
@@ -49,7 +51,7 @@ def get_sam(data_dir, filename):
         real_filename = [f for f in os.listdir(data_dir) if f.endswith("_"+filename)][0]
         return pysam.AlignmentFile(os.path.join(data_dir, real_filename), "rb")
 
-def generate_reads(samfile, x, labels, min_base_quality=20, min_mapping_quality=0):
+def generate_reads(samfile, x, labels=None, min_base_quality=20, min_mapping_quality=0):
     """
     Gets the reads at a position and reports whether they match the variant allele or not.
 

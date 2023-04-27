@@ -95,6 +95,9 @@ def read_input_data(filename):
             labels = labels[['chrm', 'pos', 'assignment']] #x, 'responsibilities']]
             df = features.merge(labels, on = ['chrm', 'pos'], how = 'inner')
             df['sample'] = i
+            df = df[df['var_type'].isin(['SNP', 'DNP'])]
+            df['f_p_normal'] = df['f_p_normal'].fillna(0)
+            #print(df)
             dfs.append(df)
     df = pd.concat(dfs).dropna()
 

@@ -70,7 +70,10 @@ def extract_read_features(df, data_dirs, cell_labels):
 
     def extract_single_variant_features(x):
         # Just to print progress
-        var_sams = [get_sam(data_dir, x['filename']) for data_dir in data_dirs]
+        try:
+            var_sams = [get_sam(data_dir, x['filename']) for data_dir in data_dirs]
+        except:
+            return [None] * len(features)
         reads = []
         for sam in var_sams: reads+=[r for r in generate_reads(sam, x, cell_labels)]
         alt_reads = [read for read, is_alt, is_norm in reads if is_alt]
@@ -103,7 +106,6 @@ def extract_read_features(df, data_dirs, cell_labels):
         return var_length, num_mm, softclip, mapq, tlen, num_ins, num_del, dist_readend, start_variance, end_variance, mate_mapped, directionality, prop_normal#, tot
 
     df = match_variants_to_filenames(df, data_dirs)
-    prog = update_progress(len(df))
     features = ['f_mean_len', 'f_mean_tlen', 'f_p_softclip', 'f_mean_mapq', 'f_mean_tlen', 'f_p_ins', 'f_p_del', 'f_mean_readend', 'f_std_start', 'f_std_end', 'f_p_matemapped', 'f_directionality', 'f_p_normal'] #, 'f_tot']
 
     df[features] = df.parallel_apply(lambda x: extract_single_variant_features(x), axis=1, result_type="expand")

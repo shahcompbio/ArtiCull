@@ -11,7 +11,6 @@ def main(args):
     print("1. Loading model from: {}".format(args.model_dir))
     model, scaler = load_model(args.model_dir)
     print("2. Classifying data from: {}".format(args.features))
-
     nlines = sum(1 for _ in open(args.features, 'r'))-1
 
     if args.cores: ncores = args.cores
@@ -23,7 +22,7 @@ def main(args):
     for i, df in enumerate(df_reader):
         print('\r\t{}/{} variants completed'.format(i*args.chunksize, nlines), end = '')
         first = (i == 0)
-        df['f_prop_normal'] = df['f_prop_normal'].fillna(0)
+        df['f_p_normal'] = df['f_p_normal'].fillna(0)
         process_chunk(df, model, scaler, args.output_dir, ncores, first)
     print('\r\t{}/{} variants completed'.format(nlines, nlines), end = '')
 
@@ -33,8 +32,8 @@ def process_chunk(df, model, scaler, output_dir, ncores, first):
     ###
     #   TEMPORARY: For now, only classify SNPs. Other models are not implemented
     ###
-    input_data = scale_data(df[df['var_type'] == 'SNP'].dropna(), scaler)
-    probs = predict(df[df['var_type'] == 'SNP'].dropna(), input_data, model, ncores)
+    input_data = scale_data(df[df['var_type'].isin(['SNP', 'DNP'])].dropna(), scaler)
+    probs = predict(df[df['var_type'].isin(['SNP', 'DNP'])].dropna(), input_data, model, ncores)
     write_output_chunk(df, probs, output_dir, first)
 
 def scale_data(df, scaler):
