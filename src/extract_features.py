@@ -29,6 +29,7 @@ def main(args):
     df.to_csv(output, sep = '\t', index=False)
 
 def input_cell_labels(filename, patient_id):
+    if not filename: return None
     df = pd.read_table(filename, sep='\t')
     df = df[df['patient_id']== patient_id].set_index('cell_id')
     return df[['is_normal_cell', 'is_high_quality_normal_cell']]
@@ -48,7 +49,12 @@ def validate_arguments(args):
 
     assert os.path.isfile(args.maf)
     assert os.path.isfile(args.map_bedgraph)
-    assert os.path.isfile(args.cell_labels)
+    try:
+        assert os.path.isfile(args.cell_labels)
+    except AssertionError:
+        print("No valid cell labels provided. Features will not compute proportion of reads in normal cells")
+        args.cell_labels=None
+
     for dir in args.bam_dirs:
         assert os.path.isdir(dir)
     assert os.access(os.path.dirname(args.output), os.W_OK)
