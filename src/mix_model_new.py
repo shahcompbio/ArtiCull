@@ -6,10 +6,9 @@ import pandas as pd
 import os
 
 from mixture_model_EM import *
-alpha = 0.1
 import scipy.stats
 
-def shared_subclonal(mut):
+def shared_subclonal(mut, alpha):
     v1, t1 = mut['var_1'], mut['tot_1']
     v2, t2 = mut['var_2'], mut['tot_2']
     c1, c2 = mut['cn_1'], mut['cn_2']
@@ -28,7 +27,7 @@ def shared_subclonal(mut):
 
     return all([p < alpha for p in [clonal1, clonal2, private1, private2]]) #and mut['ccf_1'] < 0.75 and mut['ccf_2'] < 0.75
 
-def shared_clonal(mut):
+def shared_clonal(mut, alpha):
     v1, t1 = mut['var_1'], mut['tot_1']
     v2, t2 = mut['var_2'], mut['tot_2']
     c1, c2 = mut['cn_1'], mut['cn_2']
@@ -41,20 +40,20 @@ def shared_clonal(mut):
 
     return (clonal1 < alpha and clonal2 < alpha)
 
-def get_assignment(mut):
+def get_assignment(mut, alpha):
     c1, c2 = mut['cn_1'], mut['cn_2']
     if c1 == 0 or c2 == 0: return -1
-    if shared_subclonal(mut): return 0
-    elif shared_clonal(mut): return 1
+    if shared_subclonal(mut, alpha): return 0
+    elif shared_clonal(mut, alpha): return 1
     else: return -1
 
 def main(args):
 
     # df = df_orig.sample(n=1000, random_state = 1)
     validate_arguments(args)
-    input_file, output_dir, clone1, clone2 = args.input_file, args.output_dir, args.clone1, args.clone2
+    input_file, output_dir, clone1, clone2, alpha = args.input_file, args.output_dir, args.clone1, args.clone2, args.alpha
     df = process_df(input_file, clone1, clone2)
-    df['assignment'] = df.parallel_apply(get_assignment, axis=1)
+    df['assignment'] = df.parallel_apply(lambda x: get_assignment(x, alpha), axis=1)
     df.to_csv("{}/assignments.tsv".format(output_dir), sep='\t', index=False)
     print(df.groupby('assignment').count())
     create_plot(df, clone1, clone2, output_dir)
@@ -64,6 +63,7 @@ def add_parser_arguments(parser):
     parser.add_argument(dest='output_dir', type = str, help = '<Required> Output directory')
     parser.add_argument(dest='clone1', type = str, help = '<Required> Name of clone')
     parser.add_argument(dest='clone2',  type = str, help = '<Required> Name of clone')
+    parser.add_argument('--alpha', default=0.1, type=float, help='Per sample FDR. Total FDR = alpha^2', required=False)
 
 
 def validate_arguments(args):
