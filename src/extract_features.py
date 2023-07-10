@@ -20,7 +20,9 @@ def main(args):
 
     print("1. Reading Variants from: {}\n".format(maf))
     df = get_variants(maf)
+    labels=None
     labels = input_cell_labels(args.cell_labels, args.patient_id)
+    print(labels)
     print("2. Extracting Read Features from: {}".format(bam_dirs))
     df = extract_read_features(df, bam_dirs, labels)
     print("\n3. Extracting Mappability from: {}\n".format(mappability) )
@@ -29,7 +31,6 @@ def main(args):
     df.to_csv(output, sep = '\t', index=False)
 
 def input_cell_labels(filename, patient_id):
-    if not filename: return None
     df = pd.read_table(filename, sep='\t')
     df = df[df['patient_id']== patient_id].set_index('cell_id')
     return df[['is_normal_cell', 'is_high_quality_normal_cell']]
@@ -49,12 +50,7 @@ def validate_arguments(args):
 
     assert os.path.isfile(args.maf)
     assert os.path.isfile(args.map_bedgraph)
-    try:
-        assert os.path.isfile(args.cell_labels)
-    except AssertionError:
-        print("No valid cell labels provided. Features will not compute proportion of reads in normal cells")
-        args.cell_labels=None
-
+    #assert os.path.isfile(args.cell_labels)
     for dir in args.bam_dirs:
         assert os.path.isdir(dir)
     assert os.access(os.path.dirname(args.output), os.W_OK)
@@ -67,7 +63,7 @@ import functools
 def binomtest_memo(k, n):
     return math.log(binomtest(k, n).pvalue)
 
-def extract_read_features(df, data_dirs, cell_labels):
+def extract_read_features(df, data_dirs, cell_labels = None):
 
     def mean(data):
         try: mean = sum(data)/len(data)
@@ -75,7 +71,13 @@ def extract_read_features(df, data_dirs, cell_labels):
         return mean
 
     def extract_single_variant_features(x):
-        # Just to print progress
+
+        def get_tag(read, tag):
+            try: 
+                return read.alignment.get_tag(tag)
+            except KeyError:
+                return False
+
         try:
             var_sams = [get_sam(data_dir, x['filename']) for data_dir in data_dirs]
         except:
@@ -89,10 +91,13 @@ def extract_read_features(df, data_dirs, cell_labels):
         num_mm = mean([read.alignment.get_cigar_stats()[0][10] for read in alt_reads])
         softclip = mean([read.alignment.get_cigar_stats()[0][4] > 0 for read in alt_reads])
         mapq = mean([read.alignment.mapping_quality for read in alt_reads])
-        num_ins = mean([read.alignment.get_cigar_stats()[0][1] for read in alt_reads ])
-        num_del = mean([read.alignment.get_cigar_stats()[0][2] for read in alt_reads ])
+        num_ins = mean([read.alignment.get_cigar_stats()[0][1] > 0 for read in alt_reads ])
+        num_del = mean([read.alignment.get_cigar_stats()[0][2] > 0 for read in alt_reads ])
         dist_readend = mean([min(read.query_position, len(read.alignment.query_sequence) -  read.query_position)  for read in alt_reads])
         prop_normal = mean([is_alt for read, is_alt, is_norm in reads if is_norm])
+        prop_XA = mean([get_tag(read, 'XA') != False for read in alt_reads])
+        mean_XS = mean([get_tag(read, 'XS') for read in alt_reads])
+        
 
         def get_aligned_block(read):
             blocks = read.alignment.get_blocks()
@@ -109,10 +114,10 @@ def extract_read_features(df, data_dirs, cell_labels):
             # If there's only one alt read
             directionality = 0
 
-        return var_length, num_mm, softclip, mapq, tlen, num_ins, num_del, dist_readend, start_variance, end_variance, mate_mapped, directionality, prop_normal#, tot
-
+        #return var_length, num_mm, softclip, mapq, tlen, num_ins, num_del, dist_readend, start_variance, end_variance, mate_mapped, directionality, prop_normal#, tot
+        return var_length, tlen, softclip, mapq, num_mm, num_ins, num_del, dist_readend, start_variance, end_variance, mate_mapped, directionality, prop_normal, prop_XA, mean_XS
     df = match_variants_to_filenames(df, data_dirs)
-    features = ['f_mean_len', 'f_mean_tlen', 'f_p_softclip', 'f_mean_mapq', 'f_mean_tlen', 'f_p_ins', 'f_p_del', 'f_mean_readend', 'f_std_start', 'f_std_end', 'f_p_matemapped', 'f_directionality', 'f_p_normal'] #, 'f_tot']
+    features = ['f_mean_len', 'f_mean_tlen', 'f_p_softclip', 'f_mean_mapq', 'f_mean_mm', 'f_p_ins', 'f_p_del', 'f_mean_readend', 'f_std_start', 'f_std_end', 'f_p_matemapped', 'f_directionality', 'f_p_normal', 'f_p_XA', 'f_mean_XS'] #, 'f_tot']
 
     df[features] = df.parallel_apply(lambda x: extract_single_variant_features(x), axis=1, result_type="expand")
 
