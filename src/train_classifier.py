@@ -32,7 +32,7 @@ def write_model(model, scaler, output_dir):
     pickle.dump(scaler, open(os.path.join(output_dir, 'scaler.pkl'), 'wb'))
 
 def train_model(data, labels):
-    label_prop_model = LabelSpreading(alpha=0.5)
+    label_prop_model = LabelSpreading(alpha=0.05)
     model = label_prop_model.fit(data, labels)
     return model
 

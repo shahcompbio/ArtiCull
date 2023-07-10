@@ -8,6 +8,7 @@ def get_variants(filename):
     df['ref_allele'] = df['Reference_Allele']
     df['alt_allele'] = df['Tumor_Seq_Allele2']
     df['var_type'] = df['Variant_Type'].apply(lambda x: 'SNP' if 'SNP' in x else x)
+    df = df[df['var_type'] == 'SNP']
     return df[['chrm', 'pos', 'ref_allele', 'alt_allele', 'var_type']]
 
 def update_progress(tot):
