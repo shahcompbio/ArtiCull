@@ -9,6 +9,7 @@ import os
 import numpy as np
 from sklearn import datasets
 from sklearn.semi_supervised import LabelSpreading
+from sklearn.ensemble import RandomForestClassifier
 
 
 def main(args):
@@ -33,7 +34,14 @@ def write_model(model, scaler, output_dir):
 
 def train_model(data, labels):
     label_prop_model = LabelSpreading(alpha=0.05)
-    model = label_prop_model.fit(data, labels)
+    label_prop_model = label_prop_model.fit(data, labels)
+    full_labels = label_prop_model.transduction_
+
+    model = RandomForestClassifier(max_depth=2, random_state=0)
+    model = model.fit(data, full_labels)
+
+    #label_prop_model = LabelSpreading(alpha=0.05)
+    #model = label_prop_model.fit(data, labels)
     return model
 
 def test_model(data, labels, model, output_dir):

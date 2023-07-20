@@ -3,8 +3,7 @@ import argparse
 import subprocess
 import tempfile
 import numpy
-
-
+import random
 
 import pandas as pd
 pd.options.mode.chained_assignment = None #Suppress SettingWithACopy Warning
@@ -16,7 +15,8 @@ import math
 
 def main(args):
     validate_arguments(args)
-    maf, bam_dirs, mappability, output, cell_labels, patient_id = args.maf, args.bam_dirs, args.map_bedgraph, args.output, args.cell_labels, args.patient_id
+    random.seed(42)
+    maf, bam_dirs, mappability, output, cell_labels, patient_id, subsample = args.maf, args.bam_dirs, args.map_bedgraph, args.output, args.cell_labels, args.patient_id, args.subsample
 
     print("1. Reading Variants from: {}\n".format(maf))
     df = get_variants(maf)
@@ -24,11 +24,13 @@ def main(args):
     labels = input_cell_labels(args.cell_labels, args.patient_id)
     print(labels)
     print("2. Extracting Read Features from: {}".format(bam_dirs))
-    df = extract_read_features(df, bam_dirs, labels)
+    df = extract_read_features(df, bam_dirs, labels, subsample)
     print("\n3. Extracting Mappability from: {}\n".format(mappability) )
     df = run_mappability(df, mappability)
     print("4. Outputting Result to: {}\n".format(output))
     df.to_csv(output, sep = '\t', index=False)
+
+
 
 def input_cell_labels(filename, patient_id):
     df = pd.read_table(filename, sep='\t')
@@ -42,6 +44,7 @@ def add_parser_arguments(parser):
     parser.add_argument(dest='cell_labels', type=str, help = '<Required> table indicating which cells are normal')
     parser.add_argument(dest='patient_id', type=str, help = '<Required> patient id, corresponding to patient_id column in cell_label table')
     parser.add_argument(dest='bam_dirs', nargs="+", type = str, help = '<Required> list of bam directories')
+    parser.add_argument('--subsample', action="store_true", help = 'Data augmentation by subsampling examples')
 
 def validate_arguments(args):
     # Checks if input files exist and if output files are in directories that exist and can be written to
@@ -63,7 +66,7 @@ import functools
 def binomtest_memo(k, n):
     return math.log(binomtest(k, n).pvalue)
 
-def extract_read_features(df, data_dirs, cell_labels = None):
+def extract_read_features(df, data_dirs, cell_labels = None, subsample = False):
 
     def mean(data):
         try: mean = sum(data)/len(data)
@@ -73,7 +76,7 @@ def extract_read_features(df, data_dirs, cell_labels = None):
     def extract_single_variant_features(x):
 
         def get_tag(read, tag):
-            try: 
+            try:
                 return read.alignment.get_tag(tag)
             except KeyError:
                 return False
@@ -84,6 +87,11 @@ def extract_read_features(df, data_dirs, cell_labels = None):
             return [None] * len(features)
         reads = []
         for sam in var_sams: reads+=[r for r in generate_reads(sam, x, cell_labels)]
+
+        if subsample:
+            nreads = random.randint(1, len(reads))
+            reads = random.sample(reads, nreads)
+
         alt_reads = [read for read, is_alt, is_norm in reads if is_alt]
 
         var_length = mean([len(read.alignment.query_sequence) for read in alt_reads])
@@ -97,7 +105,7 @@ def extract_read_features(df, data_dirs, cell_labels = None):
         prop_normal = mean([is_alt for read, is_alt, is_norm in reads if is_norm])
         prop_XA = mean([get_tag(read, 'XA') != False for read in alt_reads])
         mean_XS = mean([get_tag(read, 'XS') for read in alt_reads])
-        
+
 
         def get_aligned_block(read):
             blocks = read.alignment.get_blocks()
