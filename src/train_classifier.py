@@ -9,12 +9,15 @@ import os
 import numpy as np
 from sklearn import datasets
 from sklearn.semi_supervised import LabelSpreading
-from sklearn.ensemble import RandomForestClassifier
-
+from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
+from sklearn.svm import LinearSVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 
 def main(args):
     validate_arguments(args)
     data, labels = read_input_data(args.file_list)
+    model_type = args.model
 
     data_train, data_test, labels_train, labels_test = train_test_split(data, labels, test_size=0.20, random_state=42)
 
@@ -24,7 +27,7 @@ def main(args):
     scaled_data_test = scale_data(data_test, scaler)
     print(scaled_data_test.sum())
 
-    model = train_model(scaled_data_train, labels_train)
+    model = train_model(scaled_data_train, labels_train, model_type)
     test_model(scaled_data_test, labels_test, model, args.output_dir)
     write_model(model, scaler, args.output_dir)
 
@@ -32,12 +35,24 @@ def write_model(model, scaler, output_dir):
     pickle.dump(model, open(os.path.join(output_dir, 'model.pkl'), 'wb'))
     pickle.dump(scaler, open(os.path.join(output_dir, 'scaler.pkl'), 'wb'))
 
-def train_model(data, labels):
+def train_model(data, labels, model_type='randomforest'):
+    if model_type.lower() == 'randomforest':
+        model = RandomForestClassifier(max_depth=2, random_state=0)
+    elif model_type.lower() == 'logistic':
+        model = LogisticRegression(random_state=0)
+    elif model_type.lower() == 'linearsvc':
+        model = LinearSVC(random_state = 0)
+    elif model_type.lower() == 'gradientboosting':
+        model = HistGradientBoostingClassifier(random_state = 0)
+    elif model_type.lower() == 'mlp':
+        model = MLPClassifier(random_state = 0)
+    else:
+        raise Error('Model not recognized: {}'.format(model))
+
+    #elif model.lower() == 'none':
     label_prop_model = LabelSpreading(alpha=0.05)
     label_prop_model = label_prop_model.fit(data, labels)
     full_labels = label_prop_model.transduction_
-
-    model = RandomForestClassifier(max_depth=2, random_state=0)
     model = model.fit(data, full_labels)
 
     #label_prop_model = LabelSpreading(alpha=0.05)
@@ -80,6 +95,7 @@ def compute_performance_stats(inferred, groundtruth):
 def add_parser_arguments(parser):
     parser.add_argument(dest='file_list', type = str, help = '<Required> file containing list of training data')
     parser.add_argument(dest='output_dir', type = str, help = '<Required> Output directory')
+    parser.add_argument('--model', type=str, default='randomforest', help = 'Model used for classification')
 
 def validate_arguments(args):
     # Checks if input files exist and if output files are in directories that exist and can be written to

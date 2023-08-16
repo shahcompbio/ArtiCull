@@ -78,7 +78,7 @@ def validate_arguments(args):
 def load_model(model_dir):
     with open(os.path.join(model_dir, 'model.pkl'), 'rb') as f:
         model = pickle.load(f)
-        model.set_params(n_jobs = 10)
+        #model.set_params(n_jobs = 10)
 
     with open(os.path.join(model_dir, 'scaler.pkl'), 'rb') as f:
         scaler = pickle.load(f)
