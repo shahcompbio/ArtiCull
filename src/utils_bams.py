@@ -28,7 +28,6 @@ def match_variants_to_filenames(df, data_dirs):
         print(temp)
     return df
 
-
 def is_normal(pileupread, labels=None):
     if labels is None: return None
 
@@ -39,6 +38,15 @@ def is_normal(pileupread, labels=None):
     except:
         is_hq_normal = False
     return is_hq_normal
+
+@functools.lru_cache
+def get_sam_path(path):
+    pysam.set_verbosity(0)
+    ## TODO This is not a great way to handle things. Should probably switch to taking as input a metadata file which
+    ## maps regions to filenames and all that logic can be handled externally in a (potentially) sample specific way
+    return pysam.AlignmentFile(path, "rb")
+
+
 
 @functools.lru_cache # memoizes
 def get_sam(data_dir, filename):

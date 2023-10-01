@@ -9,14 +9,14 @@ import pandas as pd
 pd.options.mode.chained_assignment = None #Suppress SettingWithACopy Warning
 
 from utils_io import get_variants, update_progress
-from utils_bams import match_variants_to_filenames,  generate_reads,  get_sam
+from utils_bams import match_variants_to_filenames,  generate_reads,  get_sam, get_sam_path
 from scipy.stats import binomtest
 import math
 
 def main(args):
     validate_arguments(args)
     random.seed(42)
-    maf, bam_dirs, mappability, output, cell_labels, patient_id, subsample = args.maf, args.bam_dirs, args.map_bedgraph, args.output, args.cell_labels, args.patient_id, args.subsample
+    maf, bam_dirs, mappability, output, cell_labels, patient_id, subsample, fullbam = args.maf, args.bam_dirs, args.map_bedgraph, args.output, args.cell_labels, args.patient_id, args.subsample, args.fullbam
 
     print("1. Reading Variants from: {}\n".format(maf))
     df = get_variants(maf)
@@ -24,13 +24,14 @@ def main(args):
     labels = input_cell_labels(args.cell_labels, args.patient_id)
     print(labels)
     print("2. Extracting Read Features from: {}".format(bam_dirs))
-    df = extract_read_features(df, bam_dirs, labels, subsample)
+    if fullbam:
+        df = extract_read_features_new(df,  labels, subsample, data_dirs = False, filelist = bam_dirs)
+    else:
+        df = extract_read_features_new(df, labels, subsample, data_dirs = bam_dirs, filelist = False)
     print("\n3. Extracting Mappability from: {}\n".format(mappability) )
     df = run_mappability(df, mappability)
     print("4. Outputting Result to: {}\n".format(output))
     df.to_csv(output, sep = '\t', index=False)
-
-
 
 def input_cell_labels(filename, patient_id):
     df = pd.read_table(filename, sep='\t')
@@ -44,6 +45,7 @@ def add_parser_arguments(parser):
     parser.add_argument(dest='cell_labels', type=str, help = '<Required> table indicating which cells are normal')
     parser.add_argument(dest='patient_id', type=str, help = '<Required> patient id, corresponding to patient_id column in cell_label table')
     parser.add_argument(dest='bam_dirs', nargs="+", type = str, help = '<Required> list of bam directories')
+    parser.add_argument('--fullbam', action="store_true", help ='The list of bams is provided and not in region format')
     parser.add_argument('--subsample', action="store_true", help = 'Data augmentation by subsampling examples')
 
 def validate_arguments(args):
@@ -54,8 +56,9 @@ def validate_arguments(args):
     assert os.path.isfile(args.maf)
     assert os.path.isfile(args.map_bedgraph)
     #assert os.path.isfile(args.cell_labels)
-    for dir in args.bam_dirs:
-        assert os.path.isdir(dir)
+    #for dir in args.bam_dirs:
+        #print(dir)
+        #assert os.path.isdir(dir)
     assert os.access(os.path.dirname(args.output), os.W_OK)
 
 #def get_sam(data_dir, filename):
@@ -66,7 +69,7 @@ import functools
 def binomtest_memo(k, n):
     return math.log(binomtest(k, n).pvalue)
 
-def extract_read_features(df, data_dirs, cell_labels = None, subsample = False):
+def extract_read_features_new(df, cell_labels = None, subsample = False, data_dirs=False, filelist=False):
 
     def mean(data):
         try: mean = sum(data)/len(data)
@@ -75,6 +78,81 @@ def extract_read_features(df, data_dirs, cell_labels = None, subsample = False):
 
     def extract_single_variant_features(x):
 
+        def get_tag(read, tag):
+            try:
+                return read.alignment.get_tag(tag)
+            except KeyError:
+                return False
+
+        if data_dirs:
+            try:
+                var_sams = [get_sam(data_dir, x['filename']) for data_dir in data_dirs]
+            except:
+                return [None] * len(features)
+        elif filelist:
+            var_sams = [get_sam_path(file) for file in filelist]
+        else:
+            raise Exception("Either a list of files or directories must be provided")
+
+        reads = []
+        for sam in var_sams: reads+=[r for r in generate_reads(sam, x, cell_labels)]
+
+        if subsample:
+            nreads = random.randint(1, len(reads))
+            reads = random.sample(reads, nreads)
+
+        alt_reads = [read for read, is_alt, is_norm in reads if is_alt]
+
+        var_length = mean([len(read.alignment.query_sequence) for read in alt_reads])
+        tlen = min(1000, mean([abs(read.alignment.template_length) for read in alt_reads]))
+        num_mm = mean([read.alignment.get_cigar_stats()[0][10] for read in alt_reads])
+        softclip = mean([read.alignment.get_cigar_stats()[0][4] > 0 for read in alt_reads])
+        mapq = mean([read.alignment.mapping_quality for read in alt_reads])
+        num_ins = mean([read.alignment.get_cigar_stats()[0][1] > 0 for read in alt_reads ])
+        num_del = mean([read.alignment.get_cigar_stats()[0][2] > 0 for read in alt_reads ])
+        dist_readend = mean([min(read.query_position, len(read.alignment.query_sequence) -  read.query_position)  for read in alt_reads])
+        prop_normal = mean([is_alt for read, is_alt, is_norm in reads if is_norm])
+        prop_XA = mean([get_tag(read, 'XA') != False for read in alt_reads])
+        mean_XS = mean([get_tag(read, 'XS') for read in alt_reads])
+
+
+        def get_aligned_block(read):
+            blocks = read.alignment.get_blocks()
+            return blocks[0][0], blocks[-1][1]
+
+        start_variance = numpy.std([get_aligned_block(read)[0] for read in alt_reads], ddof = 1) # bessel's correction
+        end_variance = numpy.std([get_aligned_block(read)[1] for read in alt_reads], ddof = 1)
+
+        mate_mapped = mean([read.alignment.mate_is_mapped for read in alt_reads])
+        forward = sum([read.alignment.is_forward for read in alt_reads])
+        try:
+            directionality = max(-20, binomtest_memo(forward, len(alt_reads)))
+        except:
+            # If there's only one alt read
+            directionality = 0
+
+        #return var_length, num_mm, softclip, mapq, tlen, num_ins, num_del, dist_readend, start_variance, end_variance, mate_mapped, directionality, prop_normal#, tot
+        return var_length, tlen, softclip, mapq, num_mm, num_ins, num_del, dist_readend, start_variance, end_variance, mate_mapped, directionality, prop_normal, prop_XA, mean_XS
+
+    if data_dirs: df = match_variants_to_filenames(df, data_dirs)
+
+    features = ['f_mean_len', 'f_mean_tlen', 'f_p_softclip', 'f_mean_mapq', 'f_mean_mm', 'f_p_ins', 'f_p_del', 'f_mean_readend', 'f_std_start', 'f_std_end', 'f_p_matemapped', 'f_directionality', 'f_p_normal', 'f_p_XA', 'f_mean_XS'] #, 'f_tot']
+
+    df[features] = df.parallel_apply(lambda x: extract_single_variant_features(x), axis=1, result_type="expand")
+
+    try: del df['filename']
+    except: pass
+
+    return df
+
+def extract_read_features(df, data_dirs, cell_labels = None, subsample = False, fullbam=False):
+
+    def mean(data):
+        try: mean = sum(data)/len(data)
+        except ZeroDivisionError: mean = float("nan")
+        return mean
+
+    def extract_single_variant_features(x):
         def get_tag(read, tag):
             try:
                 return read.alignment.get_tag(tag)
@@ -124,7 +202,8 @@ def extract_read_features(df, data_dirs, cell_labels = None, subsample = False):
 
         #return var_length, num_mm, softclip, mapq, tlen, num_ins, num_del, dist_readend, start_variance, end_variance, mate_mapped, directionality, prop_normal#, tot
         return var_length, tlen, softclip, mapq, num_mm, num_ins, num_del, dist_readend, start_variance, end_variance, mate_mapped, directionality, prop_normal, prop_XA, mean_XS
-    df = match_variants_to_filenames(df, data_dirs)
+
+    df = match_variants_to_filenames(df, data_dirs, fullbam)
     features = ['f_mean_len', 'f_mean_tlen', 'f_p_softclip', 'f_mean_mapq', 'f_mean_mm', 'f_p_ins', 'f_p_del', 'f_mean_readend', 'f_std_start', 'f_std_end', 'f_p_matemapped', 'f_directionality', 'f_p_normal', 'f_p_XA', 'f_mean_XS'] #, 'f_tot']
 
     df[features] = df.parallel_apply(lambda x: extract_single_variant_features(x), axis=1, result_type="expand")
