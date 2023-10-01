@@ -1,0 +1,13 @@
+/juno/work/shah/users/satasg/projects/2023/snv_filter/software/src/train_classifier.py:117: DtypeWarning: Columns (0) have mixed types. Specify dtype option on import or set low_memory=False.
+  features = pd.read_table(feature_file, sep='\t')
+INFO: Pandarallel will run on 20 workers.
+INFO: Pandarallel will use Memory file system to transfer data between the main process and workers.
+cores :	 20
+mode :	 train
+file_list :	 train/model/filelist.txt
+output_dir :	 train/model
+model :	 gradientboosting
+fit scaling
+5.662148083729335e-09
+scaling here
+880.4282072343793
