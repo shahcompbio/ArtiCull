@@ -16,13 +16,14 @@ import math
 def main(args):
     validate_arguments(args)
     random.seed(42)
-    maf, bam_dirs, mappability, output, cell_labels, patient_id, subsample, fullbam = args.maf, args.bam_dirs, args.map_bedgraph, args.output, args.cell_labels, args.patient_id, args.subsample, args.fullbam
+    maf, bam_dirs, mappability, output, cell_labels, patient_id, subsample, fullbam = args.input_file, args.bam_dirs, args.map_bedgraph, args.output, args.cell_labels, args.patient_id, args.subsample, args.fullbam
+    
+    cell_labels = None if cell_labels.lower() == 'none' else cell_labels
 
     print("1. Reading Variants from: {}\n".format(maf))
     df = get_variants(maf)
     labels=None
-    labels = input_cell_labels(args.cell_labels, args.patient_id)
-    print(labels)
+    if cell_labels: labels = input_cell_labels(args.cell_labels, args.patient_id)
     print("2. Extracting Read Features from: {}".format(bam_dirs))
     if fullbam:
         df = extract_read_features_new(df,  labels, subsample, data_dirs = False, filelist = bam_dirs)
@@ -39,7 +40,7 @@ def input_cell_labels(filename, patient_id):
     return df[['is_normal_cell', 'is_high_quality_normal_cell']]
 
 def add_parser_arguments(parser):
-    parser.add_argument(dest='maf', type = str, help = '<Required> maf file containing candidate variants')
+    parser.add_argument(dest='input_file', type = str, help = '<Required> file containing candidate variants')
     parser.add_argument(dest='map_bedgraph', type = str, help = '<Required> Mappability bedgraph')
     parser.add_argument(dest='output', type = str, help = '<Required> Full path and name of output file')
     parser.add_argument(dest='cell_labels', type=str, help = '<Required> table indicating which cells are normal')
@@ -53,7 +54,7 @@ def validate_arguments(args):
     for arg in vars(args):
         print(arg, getattr(args, arg))
 
-    assert os.path.isfile(args.maf)
+    assert os.path.isfile(args.input_file)
     assert os.path.isfile(args.map_bedgraph)
     #assert os.path.isfile(args.cell_labels)
     #for dir in args.bam_dirs:
