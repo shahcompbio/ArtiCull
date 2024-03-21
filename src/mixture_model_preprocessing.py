@@ -16,7 +16,7 @@ from utils_bams import match_variants_to_filenames, get_sam, generate_reads
 def main(args):
     #maf, bam_dirs, signals_dir, output = parse_arguments()
     validate_arguments(args)
-    maf, bam_dirs, signals_dir, output_dir = args.maf, args.bam_dirs, args.signals_dir, args.output_dir
+    maf, bam_dirs, signals_dir, output_dir, fullbam = args.maf, args.bam_dirs, args.signals_dir, args.output_dir, args.fullbam
 
     print("1. Reading variants from: {}".format(maf))
     df = get_variants(maf)
@@ -28,7 +28,7 @@ def main(args):
     print(clone_ids)
 
     print("3. Extracting clone variant counts from: {}".format(bam_dirs))
-    df = get_clone_var_counts(df, bam_dirs, clonemap, clone_ids)
+    df = get_clone_var_counts(df, bam_dirs, clonemap, clone_ids, fullbam)
 
     print("4. Computing CCFs")
     df = compute_ccfs(df, clone_ids)
@@ -46,6 +46,7 @@ def add_parser_arguments(parser):
     parser.add_argument(dest='signals_dir', type = str, help = '<Required> directory of signals output')
     parser.add_argument(dest='output_dir', type = str, help = '<Required> Full path and name of output file')
     parser.add_argument(dest='bam_dirs', nargs="+", type = str, help = '<Required> list of bam directories')
+    parser.add_argument('--fullbam', action="store_true", help ='The list of bams is provided and not in region format')
 
 def validate_arguments(args):
     # Checks if input files exist and if output files are in directories that exist and can be written to
@@ -54,8 +55,8 @@ def validate_arguments(args):
 
     assert path.isfile(args.maf)
     assert path.isdir(args.signals_dir)
-    for dir in args.bam_dirs:
-        assert path.isdir(dir)
+    #for dir in args.bam_dirs:
+    #    assert path.isdir(dir)
     assert os.access(args.output_dir, os.W_OK)
 
 def process_signals(df, signals_dir):
@@ -148,7 +149,10 @@ def get_clone_var_counts(df, data_dirs, clonemap, clone_ids):
 
         return var_data
 
-    df = match_variants_to_filenames(df, data_dirs)
+    if fullbam: df['filename'] = data_dirs[0]
+    else:
+        df = match_variants_to_filenames(df, data_dirs)
+
     prog = update_progress(len(df))
 
     columns = []
