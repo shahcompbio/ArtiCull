@@ -84,6 +84,10 @@ def process_signals(df, signals_dir):
     ids_map = clonemap['clone_id']
     cn_df['clone']= cn_df['cell_id'].map(ids_map)
 
+    if 'Maj' not in cn_df.columns:
+        cn_df['Maj'] = cn_df['A']
+        cn_df['Min'] = cn_df['B']
+
     clone_cns = cn_df.groupby(['chr', 'start', 'end', 'clone'])[['Maj', 'Min']].median().reset_index()
 
     clone_cn_dfs = {}
