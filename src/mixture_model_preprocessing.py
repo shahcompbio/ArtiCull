@@ -37,7 +37,7 @@ def main(args):
     print("5. Outputting result to: {}".format(result_filename))
     df.to_csv(result_filename, sep = '\t', index=False)
 
-    plot_filename = os.path.join(output_dir, "clone_ccfs.pdf")
+    plot_filename = os.path.join(output_dir, "clone_ccfs.png")
     print("6. Creating clone CCF plot at: {}".format(plot_filename))
     plot_ccfs(df, plot_filename, clone_ids)
 
