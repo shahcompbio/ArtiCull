@@ -21,21 +21,30 @@ def main(args):
 
     data_train, data_test, labels_train, labels_test = train_test_split(data, labels, test_size=0.20, random_state=42)
 
+    print(len(data))
     # Standard scale data
     scaled_data_train, scaler = scale_data(data_train)
     print(scaled_data_train.sum())
     scaled_data_test = scale_data(data_test, scaler)
     print(scaled_data_test.sum())
 
+
+
     model = train_model(scaled_data_train, labels_train, model_type)
     test_model(scaled_data_test, labels_test, model, args.output_dir)
     write_model(model, scaler, args.output_dir)
+
+def downsample_unlabeled(data, n=1000):
+    try:
+        return data.sample(n, random_state = 0)
+    except ValueError:
+        return data # if not big enough
 
 def write_model(model, scaler, output_dir):
     pickle.dump(model, open(os.path.join(output_dir, 'model.pkl'), 'wb'))
     pickle.dump(scaler, open(os.path.join(output_dir, 'scaler.pkl'), 'wb'))
 
-def train_model(data, labels, model_type='randomforest'):
+def train_model(data, labels, model_type='gradientboosting'):
     if model_type.lower() == 'randomforest':
         model = RandomForestClassifier(max_depth=2, random_state=0)
     elif model_type.lower() == 'logistic':
@@ -49,14 +58,11 @@ def train_model(data, labels, model_type='randomforest'):
     else:
         raise Error('Model not recognized: {}'.format(model))
 
-    #elif model.lower() == 'none':
     label_prop_model = LabelSpreading(alpha=0.05)
     label_prop_model = label_prop_model.fit(data, labels)
     full_labels = label_prop_model.transduction_
     model = model.fit(data, full_labels)
 
-    #label_prop_model = LabelSpreading(alpha=0.05)
-    #model = label_prop_model.fit(data, labels)
     return model
 
 def test_model(data, labels, model, output_dir):
@@ -82,10 +88,6 @@ def compute_performance_stats(inferred, groundtruth):
     tn = sum([1 for inf, gt in zip(inferred, groundtruth) if inf == 0 and gt == 0])
     fn = sum([1 for inf, gt in zip(inferred, groundtruth) if inf == 0 and gt == 1])
 
-    #print(inferred)
-    #print(groundtruth)
-    #print(tp, fp, tn, fn)
-    #return 0,0,0
     accuracy = (tp+tn)/(tp+tn+fp+fn)
     precision = (tp)/(tp+fp)
     recall = (tp)/(tp+fn)
@@ -121,16 +123,20 @@ def read_input_data(filename):
             df['sample'] = i
             df = df[df['var_type'].isin(['SNP', 'DNP'])]
             df['f_p_normal'] = df['f_p_normal'].fillna(0)
-            #print(df)
-            dfs.append(df)
+
+            df_labeled = df[df['assignment'] != -1]
+            df_unlabeled = downsample_unlabeled(df[df['assignment'] == -1])
+
+
+            dfs.append(df_labeled)
+            dfs.append(df_unlabeled)
+
+
     df = pd.concat(dfs).dropna()
 
     feature_cols = [c for c in df.columns if c.startswith('f_')]
     data = df[feature_cols].values
     labels = df.assignment.copy()
-    #labels[(df.assignment == 1) | (df.assignment == 2)] = -1 # labels[(df.assignment == 1) | (df.assignment == 2)].apply(lambda x: -1 if random() < 0.9 else 0)
-    #labels[df.assignment == 0 ] = 1
-    #labels[df.assignment == 3] = 0
 
     return data, labels
 
