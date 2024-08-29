@@ -53,10 +53,11 @@ def train_model(data, labels, model_type='gradientboosting'):
         model = LinearSVC(random_state = 0)
     elif model_type.lower() == 'gradientboosting':
         model = HistGradientBoostingClassifier(random_state = 0)
+                #class_weight={0:0.9, 1:.1})
     elif model_type.lower() == 'mlp':
         model = MLPClassifier(random_state = 0)
     else:
-        raise Error('Model not recognized: {}'.format(model))
+        raise Exception('Model not recognized: {}'.format(model))
 
     label_prop_model = LabelSpreading(alpha=0.05)
     label_prop_model = label_prop_model.fit(data, labels)
@@ -97,7 +98,7 @@ def compute_performance_stats(inferred, groundtruth):
 def add_parser_arguments(parser):
     parser.add_argument(dest='file_list', type = str, help = '<Required> file containing list of training data')
     parser.add_argument(dest='output_dir', type = str, help = '<Required> Output directory')
-    parser.add_argument('--model', type=str, default='randomforest', help = 'Model used for classification')
+    parser.add_argument('--model', type=str, default='gradientboosting', help = 'Model used for classification')
 
 def validate_arguments(args):
     # Checks if input files exist and if output files are in directories that exist and can be written to
