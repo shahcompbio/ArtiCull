@@ -28,7 +28,7 @@ def setup_module_arguments(parser):
     args = parser.parse_args()
     mode = args.mode
 
-    from pandarallel import pandarallel
+    from pandarallel import pandarallel # type: ignore
     progress_bar = mode != 'classify'
     if args.cores:
         pandarallel.initialize(progress_bar=progress_bar, nb_workers = args.cores, use_memory_fs=True)
