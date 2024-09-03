@@ -69,7 +69,7 @@ def process_signals(df, signals_dir, output_dir, use_cached):
 
     signals_result = path.join(signals_dir, 'signals.Rdata')
     signals_cns = path.join(signals_dir, 'hscn.csv.gz')
-    outfile = os.path.join(output_dir, "signals_clones.csv")
+    outfile = os.path.join(output_dir, "signals_clones.tsv")
 
     if use_cached and os.path.isfile(outfile):
         print("Using existing cell-to-clone map: {}".format(outfile))
