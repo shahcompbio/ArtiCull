@@ -60,7 +60,7 @@ def validate_arguments(args):
         print(arg, getattr(args, arg))
 
     assert path.isfile(args.maf)
-    assert path.isdir(args.signals_dir)
+    #assert path.isdir(args.signals_dir)
     #for dir in args.bam_dirs:
     #    assert path.isdir(dir)
     assert os.access(args.output_dir, os.W_OK)
@@ -81,7 +81,7 @@ def process_signals(df, signals_dir, output_dir, use_cached):
         return outfile, signals_cns
 
 def parse_copynumber(df, cellclone_file, hscn_file):
-    clonemap = pd.read_table(cellclone_file)
+    clonemap = pd.read_table(cellclone_file, index_col=0)
     clone_ids = sorted(clonemap['clone_id'].unique())
 
     cn_df = pd.read_table(hscn_file, sep=',')
