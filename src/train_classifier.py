@@ -18,6 +18,7 @@ def main(args):
     validate_arguments(args)
     data, labels = read_input_data(args.file_list)
     model_type = args.model
+    no_label_prop = args.no_label_prop
 
     data_train, data_test, labels_train, labels_test = train_test_split(data, labels, test_size=0.20, random_state=42)
 
@@ -28,9 +29,7 @@ def main(args):
     scaled_data_test = scale_data(data_test, scaler)
     print(scaled_data_test.sum())
 
-
-
-    model = train_model(scaled_data_train, labels_train, model_type)
+    model = train_model(scaled_data_train, labels_train, model_type, no_label_prop=no_label_prop)
     test_model(scaled_data_test, labels_test, model, args.output_dir)
     write_model(model, scaler, args.output_dir)
 
@@ -44,7 +43,7 @@ def write_model(model, scaler, output_dir):
     pickle.dump(model, open(os.path.join(output_dir, 'model.pkl'), 'wb'))
     pickle.dump(scaler, open(os.path.join(output_dir, 'scaler.pkl'), 'wb'))
 
-def train_model(data, labels, model_type='gradientboosting'):
+def train_model(data, labels, model_type='gradientboosting', no_label_prop=False):
     if model_type.lower() == 'randomforest':
         model = RandomForestClassifier(max_depth=2, random_state=0)
     elif model_type.lower() == 'logistic':
@@ -59,10 +58,13 @@ def train_model(data, labels, model_type='gradientboosting'):
     else:
         raise Exception('Model not recognized: {}'.format(model))
 
-    label_prop_model = LabelSpreading(alpha=0.05)
-    label_prop_model = label_prop_model.fit(data, labels)
-    full_labels = label_prop_model.transduction_
-    model = model.fit(data, full_labels)
+    if no_label_prop:
+        model = model.fit(data, labels)
+    else:
+        label_prop_model = LabelSpreading(alpha=0.05)
+        label_prop_model = label_prop_model.fit(data, labels)
+        full_labels = label_prop_model.transduction_
+        model = model.fit(data, full_labels)
 
     return model
 
@@ -99,6 +101,7 @@ def add_parser_arguments(parser):
     parser.add_argument(dest='file_list', type = str, help = '<Required> file containing list of training data')
     parser.add_argument(dest='output_dir', type = str, help = '<Required> Output directory')
     parser.add_argument('--model', type=str, default='gradientboosting', help = 'Model used for classification')
+    parser.add_argument('--no_label_prop', action='store_true', help = 'Don\'t use label propagation to fill in missing labels')
 
 def validate_arguments(args):
     # Checks if input files exist and if output files are in directories that exist and can be written to
