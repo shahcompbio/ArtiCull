@@ -80,20 +80,22 @@ def process_signals(df, signals_dir, output_dir, use_cached):
         subprocess.check_call(command.split(' '))
         return outfile, signals_cns
 
+
 def parse_copynumber(df, cellclone_file, hscn_file):
+
     clonemap = pd.read_table(cellclone_file, index_col=0)
     clone_ids = sorted(clonemap['clone_id'].unique())
-
-    cn_df = pd.read_table(hscn_file, sep=',')
-
-    # Cell to clone map table
     ids_map = clonemap['clone_id']
-    cn_df['clone']= cn_df['cell_id'].map(ids_map)
 
-    if 'Maj' not in cn_df.columns:
+    try:
+        cn_df = pd.read_table(hscn_file, usecols=['cell_id', 'chr', 'start', 'end', 'Maj', 'Min'], sep=',')
+    except ValueError:
+        cn_df = pd.read_table(hscn_file, usecols=['cell_id', 'chr', 'start', 'end', 'A', 'B'], sep=',')
         cn_df['Maj'] = cn_df['A']
         cn_df['Min'] = cn_df['B']
 
+    # Cell to clone map table    
+    cn_df['clone']= cn_df['cell_id'].map(ids_map)
     clone_cns = cn_df.groupby(['chr', 'start', 'end', 'clone'])[['Maj', 'Min']].median().reset_index()
     clone_cns['CN'] = clone_cns['Maj'] + clone_cns['Min']
 
