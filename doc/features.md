@@ -46,11 +46,11 @@ where $I(r)$ is an indicator if read $r$ contains inserted bases.
 
 ### Proportion of Reads with Deletions
  `f_p_del`=$ \frac{1}{|R|} \sum_{r \in R} D(r)$
-where $I(r)$ is an indicator if read $r$ contains deleted bases. 
+where $D(r)$ is an indicator if read $r$ contains deleted bases. 
 
 ### Proportion of Reads with Properly Mapped Mates
  `f_p_matemapped` = $ \frac{1}{|R|} \sum_{r \in R} P(r)$
-where $P(r)$ is an indicator if read $r$ contains deleted bases. 
+where $P(r)$ is an indicator if read $r$ has a properly mapped mate. 
 
 ### Directionality
 `f_directionality` = $ \left|0.5 - \frac{1}{|R|} \sum_{r \in R} F(r)\right| $

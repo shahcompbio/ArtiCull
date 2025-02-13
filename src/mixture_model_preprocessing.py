@@ -16,7 +16,7 @@ from utils_bams import match_variants_to_filenames, get_sam, generate_reads
 def main(args):
     #maf, bam_dirs, signals_dir, output = parse_arguments()
     validate_arguments(args)
-    maf, bam_dirs, signals_dir, output_dir = args.maf, args.bam_dirs, args.signals_dir, args.output_dir
+    maf, bam_dirs, signals_dir, output_dir, fullbam = args.maf, args.bam_dirs, args.signals_dir, args.output_dir, args.fullbam
 
     print("1. Reading variants from: {}".format(maf))
     df = get_variants(maf)
@@ -28,7 +28,7 @@ def main(args):
     print(clone_ids)
 
     print("3. Extracting clone variant counts from: {}".format(bam_dirs))
-    df = get_clone_var_counts(df, bam_dirs, clonemap, clone_ids)
+    df = get_clone_var_counts(df, bam_dirs, clonemap, clone_ids, fullbam)
 
     print("4. Computing CCFs")
     df = compute_ccfs(df, clone_ids)
@@ -37,7 +37,7 @@ def main(args):
     print("5. Outputting result to: {}".format(result_filename))
     df.to_csv(result_filename, sep = '\t', index=False)
 
-    plot_filename = os.path.join(output_dir, "clone_ccfs.pdf")
+    plot_filename = os.path.join(output_dir, "clone_ccfs.png")
     print("6. Creating clone CCF plot at: {}".format(plot_filename))
     plot_ccfs(df, plot_filename, clone_ids)
 
@@ -46,6 +46,7 @@ def add_parser_arguments(parser):
     parser.add_argument(dest='signals_dir', type = str, help = '<Required> directory of signals output')
     parser.add_argument(dest='output_dir', type = str, help = '<Required> Full path and name of output file')
     parser.add_argument(dest='bam_dirs', nargs="+", type = str, help = '<Required> list of bam directories')
+    parser.add_argument('--fullbam', action="store_true", help ='The list of bams is provided and not in region format')
 
 def validate_arguments(args):
     # Checks if input files exist and if output files are in directories that exist and can be written to
@@ -54,8 +55,8 @@ def validate_arguments(args):
 
     assert path.isfile(args.maf)
     assert path.isdir(args.signals_dir)
-    for dir in args.bam_dirs:
-        assert path.isdir(dir)
+    #for dir in args.bam_dirs:
+    #    assert path.isdir(dir)
     assert os.access(args.output_dir, os.W_OK)
 
 def process_signals(df, signals_dir):
@@ -64,18 +65,23 @@ def process_signals(df, signals_dir):
     signals_cns = path.join(signals_dir, 'hscn.csv.gz')
     temp = tempfile.NamedTemporaryFile(delete=False, mode='w')
     temp_name = temp.name
-    #temp_name = "./cn.txt"
+    #temp_name = "./test.signals"
+
     try:
+        #if not os.path.isfile(temp_name):
         #temp.close()
         directory = path.dirname(path.realpath(path.expanduser(__file__)))
         command = "Rscript {}/extract_cell2clone.R {} {}".format(directory, signals_result, temp_name)
-        #print(command)
         subprocess.check_call(command.split(' '))
 
         clonemap = pd.read_table(temp_name)
         clone_ids = sorted(clonemap['clone_id'].unique())
     finally:
         os.remove(temp_name)
+        pass
+
+    print(clonemap)
+    print(clonemap.clone_id.value_counts())
 
     cn_df = pd.read_table(signals_cns, sep=',')
 
@@ -83,12 +89,33 @@ def process_signals(df, signals_dir):
     ids_map = clonemap['clone_id']
     cn_df['clone']= cn_df['cell_id'].map(ids_map)
 
+    if 'Maj' not in cn_df.columns:
+        cn_df['Maj'] = cn_df['A']
+        cn_df['Min'] = cn_df['B']
+
+    fields = ['chr','start', 'end', 'clone', 'A', 'B']
+
     clone_cns = cn_df.groupby(['chr', 'start', 'end', 'clone'])[['Maj', 'Min']].median().reset_index()
+    clone_cns['CN'] = clone_cns['Maj'] + clone_cns['Min']
+
+    del cn_df # large file
 
     clone_cn_dfs = {}
+    #def process(clone_cns1):
+        #clone_cns1 = clone_cns[clone_cns['chr'] == chr m]
+        #clone_cns1['CN'] = clone_cns['Maj'] + clone_cns['Min']
+    #    clone_cns1 = clone_cns1.pivot(index=['start', 'end'], columns = 'clone', values = 'CN')
+    #    clone_cns1 = clone_cns1[sorted(clone_cns1.columns)]
+    #    clone_cns1.index = pd.IntervalIndex.from_tuples(clone_cns1.index, closed='both')
+    #    clone_cn_dfs[clone_cns1.name] = clone_cns1
+
+    #clone_cns.groupby('chr').apply(process)
+
+
+    #del clone_cns # large file
     for chrm in clone_cns['chr'].unique():
         clone_cns1 = clone_cns[clone_cns['chr'] == chrm]
-        clone_cns1['CN'] = clone_cns['Maj'] + clone_cns['Min']
+        #clone_cns1['CN'] = clone_cns['Maj'] + clone_cns['Min']
         clone_cns1 = clone_cns1.pivot(index=['start', 'end'], columns = 'clone', values = 'CN')
         clone_cns1 = clone_cns1[sorted(clone_cns1.columns)]
         clone_cns1.index = pd.IntervalIndex.from_tuples(clone_cns1.index, closed='both')
@@ -109,15 +136,18 @@ def process_signals(df, signals_dir):
 
     return df, clonemap, clone_ids
 
-def get_clone_var_counts(df, data_dirs, clonemap, clone_ids):
+def get_clone_var_counts(df, data_dirs, clonemap, clone_ids, fullbam=False):
 
     def get_clone_list(reads):
-        cells = ['_'.join(read.split('_')[1:-2]) for read in reads]
+        #cells = ['_'.join(read.split('_')[1:-2]) for read in reads]
+        cells = [read for read in reads]
         clones= []
         for cell in cells:
             try:
                 clones.append(clonemap.loc[cell]['clone_id'])
             except:
+                #print(cell)
+                #raise
                 clones.append('0')
         return clones
 
@@ -129,7 +159,8 @@ def get_clone_var_counts(df, data_dirs, clonemap, clone_ids):
         reads = []
         for sam in var_sams: reads+=[r for r in generate_reads(sam, x)]
 
-        read_groups = [r[0].alignment.get_tag('RG') for r in reads]
+        read_groups = [r[0].alignment.get_tag('CB:Z:') for r in reads]
+        #read_groups = [r[0].alignment.get_tag('RG') for r in reads]
         clones = get_clone_list(read_groups)
 
         var_count = Counter()
@@ -148,7 +179,10 @@ def get_clone_var_counts(df, data_dirs, clonemap, clone_ids):
 
         return var_data
 
-    df = match_variants_to_filenames(df, data_dirs)
+    if fullbam: df['filename'] = data_dirs[0]
+    else:
+        df = match_variants_to_filenames(df, data_dirs)
+
     prog = update_progress(len(df))
 
     columns = []
@@ -178,7 +212,7 @@ def plot_ccfs(df, output, clone_ids):
         df_plot[c] = df['ccf_{}'.format(c)]
 
     g = sns.pairplot(df_plot, kind='scatter', plot_kws={'alpha':0.2, 's':8}, corner=True)
-    g.set(xlim=(-0.1,2.1), ylim = (-0.1,2.1))
+    g.set(xlim=(-0.1,1.1), ylim = (-0.1,1.1))
     pyplot.savefig(output, bbox_inches = 'tight')
 
 
