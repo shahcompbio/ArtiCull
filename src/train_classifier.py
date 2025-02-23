@@ -13,6 +13,7 @@ from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassif
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
+from sklearn.calibration import CalibratedClassifierCV
 
 def main(args):
     validate_arguments(args)
@@ -49,7 +50,8 @@ def train_model(data, labels, model_type='gradientboosting', no_label_prop=False
     elif model_type.lower() == 'logistic':
         model = LogisticRegression(random_state=0)
     elif model_type.lower() == 'linearsvc':
-        model = LinearSVC(random_state = 0)
+        svm = LinearSVC(random_state = 0)
+        model = CalibratedClassifierCV(svm) # To get probabilities
     elif model_type.lower() == 'gradientboosting':
         model = HistGradientBoostingClassifier(random_state = 0)
                 #class_weight={0:0.9, 1:.1})
