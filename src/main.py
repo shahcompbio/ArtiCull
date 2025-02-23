@@ -2,16 +2,16 @@ import argparse
 import os
 
 def setup_module_arguments(parser):
-    import mixture_model_preprocessing
+    import train_preprocessing
     import extract_features
-    import mix_model_new
+    import train_gen_labels
     import train_classifier
     import apply_classifier
 
     modes = {
             "extract_features" : extract_features,
-            "mm_preprocessing" : mixture_model_preprocessing,
-            "mixture_model" : mix_model_new,
+            "train_preprocessing" : train_preprocessing,
+            "train_genlabels" : train_gen_labels,
             "train" : train_classifier,
             "classify": apply_classifier
             }
