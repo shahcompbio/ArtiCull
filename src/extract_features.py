@@ -217,10 +217,16 @@ def run_mappability(df, mappability):
     """
     Gets the average mappability of the region using bedtools to intersect with
     the mappability bedGraph
+    Note: This is fairly slow in practice. In a future version, I want to split up the processing. 
+    Subdivide the mappability file into chunks and run the intersection in parallel. 
     """
+
+    # mappability is in chrN chromosome format. 
+    
 
     def write_bedfile(df, bed):
         bed_df = df[['chrm', 'pos']]
+        bed_df['chrm'] = bed_df['chrm'].apply(lambda x: x if x.startswith('chr') else 'chr' + x)
         bed_df['start'] = bed_df['pos'] - 150
         bed_df['end'] = bed_df['pos'] + 150
         del bed_df['pos']
