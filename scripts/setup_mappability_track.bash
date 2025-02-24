@@ -8,23 +8,23 @@ SCRIPT_DIR=$(dirname "$(realpath "$0")")
 
 # Validate input
 if [ -z "$1" ]; then
-    echo "Error: No genome provided. Usage: bash setup_mappability_track.bash hg19 [output_directory]"
+    echo "Error: No genome provided. Usage: bash setup_mappability_track.bash [output_directory]"
     exit 1
 fi
 
-GENOME=$1
-OUTPUT_DIR=${2:-"$SCRIPT_DIR/../resources"}  # Default to 'resources' folder in the repo root's directory
+GENOME=hg19
+OUTPUT_DIR=${1:-"$SCRIPT_DIR/../resources"}  # Default to 'resources' folder in the repo root's directory
 
-if [[ "$GENOME" != "hg19" && "$GENOME" != "GRCh37" ]]; then
-    echo "Error: Only 'hg19' or 'GRCh37' are currently implemented."
-    echo "Please raise an issue on [github link] if you need another genome."
-    exit 1
-fi
+#if [[ "$GENOME" != "hg19" && "$GENOME" != "GRCh37" ]]; then
+#    echo "Error: Only 'hg19' or 'GRCh37' are currently implemented."
+#    echo "Please raise an issue on [github link] if you need another genome."
+#    exit 1
+#fi
 
 # Check for bigWigToBedGraph
 if ! command -v bigWigToBedGraph &> /dev/null; then
     echo "Error: 'bigWigToBedGraph' is not installed or not found in your PATH."
-    echo "Please ensure you have activated the correct environment or created one using 'requirements.txt'."
+    echo "Please ensure you have activated the correct environment or created one using 'requirements.yml'."
     exit 1
 fi
 
