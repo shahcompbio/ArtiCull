@@ -1,16 +1,16 @@
-name: experimental5
 channels:
 - conda-forge
 - bioconda
 dependencies:
-- numpy
-- scipy
-- pandas 
-- matplotlib
-- seaborn
-- R
-- R-essentials
-- pysam
-- scikit-learn
-- pandarallel 
-- bedtools
+- numpy>=1.24
+- scipy>=1.10
+- pandas>=1.5,<2.0
+- matplotlib>=3.7
+- seaborn>=0.12
+- R>=4.2
+- R-essentials>=4.2
+- pysam>=0.21
+- scikit-learn==1.2.2
+- pandarallel>=1.6
+- bedtools>=2.30
+- ucsc-bigwigtobedgraph>=4.0
