@@ -5,7 +5,7 @@ import os
 import gzip
 
 def get_variants(filename, file_type = "maf"):
-    if filename.endswith('.maf'):
+    if filename.endswith('.maf') or filename.endswith('.maf.gz'):
         # Could be shared with extract features?
         df = pd.read_table(filename, skiprows=1)
         df['chrm'] = df['Chromosome'].astype('str')

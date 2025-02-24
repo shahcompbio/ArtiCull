@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import os
 
-from mixture_model_EM import *
+#from mixture_model_EM import *
 import scipy.stats
 
 def shared_subclonal(mut, alpha):
