@@ -29,13 +29,13 @@ conda activate articull-env
 Use the provided script to download and process the reference genome mappability track:
 
 ```bash
-bash setup_mappability_track.bash <genome_name> [output_directory]
+bash scripts/setup_mappability_track.bash <genome_name> [output_directory]
 ```
 
 **Note**: 
 - The download requires ~1GB of space and expands to ~5GB when uncompressed
 - Files are saved to the `resources` directory by default unless an alternative output directory is specified
-- Currently only hg19/GRCh37 is supported (additional reference genomes coming soon)
+- Currently only `hg19`/`GRCh37` is supported (additional reference genomes coming soon)
 - For other genome versions, please open an issue on GitHub
 
 ## Example Usage
