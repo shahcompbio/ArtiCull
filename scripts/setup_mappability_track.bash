@@ -1,25 +1,13 @@
 #!/bin/bash
 
 # Setup script to download and process mappability tracks
-# Usage: bash setup_mappability_track.bash hg19 [output_directory]
+# Usage: bash setup_mappability_track.bash [output_directory]
 
 # Get the directory of this script
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 
-# Validate input
-if [ -z "$1" ]; then
-    echo "Error: No genome provided. Usage: bash setup_mappability_track.bash [output_directory]"
-    exit 1
-fi
-
 GENOME=hg19
 OUTPUT_DIR=${1:-"$SCRIPT_DIR/../resources"}  # Default to 'resources' folder in the repo root's directory
-
-#if [[ "$GENOME" != "hg19" && "$GENOME" != "GRCh37" ]]; then
-#    echo "Error: Only 'hg19' or 'GRCh37' are currently implemented."
-#    echo "Please raise an issue on [github link] if you need another genome."
-#    exit 1
-#fi
 
 # Check for bigWigToBedGraph
 if ! command -v bigWigToBedGraph &> /dev/null; then
