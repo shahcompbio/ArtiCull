@@ -16,19 +16,20 @@ import math
 def main(args):
     validate_arguments(args)
     random.seed(42)
-    maf, bam_dirs, mappability, output, cell_labels, patient_id, subsample, fullbam = args.input_file, args.bam_dirs, args.map_bedgraph, args.output, args.cell_labels, args.patient_id, args.subsample, args.fullbam
+    maf, bams, mappability, output = args.input_file, args.bams, args.map_bedgraph, args.output
     
-    cell_labels = None if cell_labels.lower() == 'none' else cell_labels
+    #cell_labels = None if cell_labels.lower() == 'none' else cell_labels
 
     print("1. Reading Variants from: {}\n".format(maf))
     df = get_variants(maf)
-    labels=None
-    if cell_labels: labels = input_cell_labels(args.cell_labels, args.patient_id)
-    print("2. Extracting Read Features from: {}".format(bam_dirs))
-    if fullbam:
-        df = extract_read_features_new(df,  labels, subsample, data_dirs = False, filelist = bam_dirs)
-    else:
-        df = extract_read_features_new(df, labels, subsample, data_dirs = bam_dirs, filelist = False)
+    
+    #labels=None
+    #if cell_labels: labels = input_cell_labels(args.cell_labels, args.patient_id)
+    print("2. Extracting Read Features from: {}".format(bams))
+    #if fullbam:
+    df = extract_read_features_new(df, cell_labels = None, subsample = None, data_dirs = False, filelist = bams)
+    #else:
+    #    df = extract_read_features_new(df, labels, subsample, data_dirs = bam_dirs, filelist = False)
     print("\n3. Extracting Mappability from: {}\n".format(mappability) )
     df = run_mappability(df, mappability)
     print("4. Outputting Result to: {}\n".format(output))
@@ -41,13 +42,13 @@ def input_cell_labels(filename, patient_id):
 
 def add_parser_arguments(parser):
     parser.add_argument(dest='input_file', type = str, help = '<Required> file containing candidate variants')
-    parser.add_argument(dest='map_bedgraph', type = str, help = '<Required> Mappability bedgraph')
     parser.add_argument(dest='output', type = str, help = '<Required> Full path and name of output file')
-    parser.add_argument(dest='cell_labels', type=str, help = '<Required> table indicating which cells are normal')
-    parser.add_argument(dest='patient_id', type=str, help = '<Required> patient id, corresponding to patient_id column in cell_label table')
-    parser.add_argument(dest='bam_dirs', nargs="+", type = str, help = '<Required> list of bam directories')
-    parser.add_argument('--fullbam', action="store_true", help ='The list of bams is provided and not in region format')
-    parser.add_argument('--subsample', action="store_true", help = 'Data augmentation by subsampling examples')
+    parser.add_argument(dest='bams', nargs="+", type = str, help = '<Required> list of bam files')
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(script_dir, os.pardir))
+    default_resources_path = os.path.join(repo_root, 'resources', 'hg19_mappability.bedGraph')
+    parser.add_argument('--map_bedgraph', type=str, default=default_resources_path, help='<Optional> Mappability bedgraph (default: resources/hg19_mappability.bedGraph)')
 
 def validate_arguments(args):
     # Checks if input files exist and if output files are in directories that exist and can be written to
@@ -57,9 +58,9 @@ def validate_arguments(args):
     assert os.path.isfile(args.input_file)
     assert os.path.isfile(args.map_bedgraph)
     #assert os.path.isfile(args.cell_labels)
-    #for dir in args.bam_dirs:
+    for bam in args.bams:
         #print(dir)
-        #assert os.path.isdir(dir)
+        assert os.path.isfile(bam)
     assert os.access(os.path.dirname(args.output), os.W_OK)
 
 #def get_sam(data_dir, filename):
@@ -226,7 +227,7 @@ def run_mappability(df, mappability):
 
     def write_bedfile(df, bed):
         bed_df = df[['chrm', 'pos']]
-        bed_df['chrm'] = bed_df['chrm'].apply(lambda x: x if x.startswith('chr') else 'chr' + x)
+        bed_df['chrm'] = bed_df['chrm'].apply(lambda x: x if str(x).startswith('chr') else 'chr' + str(x)) # N -> chrN
         bed_df['start'] = bed_df['pos'] - 150
         bed_df['end'] = bed_df['pos'] + 150
         del bed_df['pos']
@@ -246,7 +247,12 @@ def run_mappability(df, mappability):
         map_df = pd.read_table(map, names=['chrm', 'start', 'end', 'f_map'])
         map_df['pos'] = ((map_df['start'] + map_df['end'])/2).astype(int)
         map_df['chrm'] = map_df['chrm'].astype(str)
-        df = df.merge(map_df[['chrm', 'pos', 'f_map']], on = ['chrm','pos'])
+        if not df['chrm'].iloc[0].startswith('chr'):
+            map_df['chrm'] = map_df['chrm'].apply(lambda x: x.replace('chr', '')) # chrN -> N
+        df = df.merge(map_df[['chrm', 'pos', 'f_map']], on = ['chrm','pos'], how = 'inner')
+        if len(df) != len(map_df):
+            print("Warning: {} variants were not correctly matched with mappability.\
+                This shouldn't happen. Please raise an issue on github with this error".format(len(map_df)-len(df)))
         return df
 
     # Create sorted bed file
