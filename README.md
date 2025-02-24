@@ -31,7 +31,7 @@ conda activate articull-env
 Use the provided script to download and process the reference genome mappability track:
 
 ```bash
-bash scripts/setup_mappability_track.bash [output_directory]
+bash scripts/setup_mappability_track.bash [optional: output_directory]
 ```
 
 **Note**: 
