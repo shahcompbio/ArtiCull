@@ -74,7 +74,7 @@ features_output=example/articull.features.tsv
 bam=example/example.bam
 mappability_file=resources/hg19_mappability.bedGraph  # update if you saved to a different location during setup
 
-python src/main.py extract_features $maf $features_output $bam --map-bedgraph $mappability_file --cores 8 
+python src/main.py extract_features $maf $features_output $bam --map_bedgraph $mappability_file --cores 8 
 ```
 
 ### 2. Run classification
