@@ -1,5 +1,0 @@
-- Update validate_arguments in files that are missing it
-- Move validate arguments call out to main.py
-- Consider error rate in mixture model
-- move to logging?
-- Update validate arguments to check if there are any bam files in the bam dirs
