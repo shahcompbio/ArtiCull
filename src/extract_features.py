@@ -31,7 +31,8 @@ def main(args):
     #else:
     #    df = extract_read_features_new(df, labels, subsample, data_dirs = bam_dirs, filelist = False)
     print("\n3. Extracting Mappability from: {}\n".format(mappability) )
-    df = run_mappability(df, mappability)
+    #df = run_mappability(df, mappability)
+    df = run_mappability_by_chrm(df, mappability)
     print("4. Outputting Result to: {}\n".format(output))
     df.to_csv(output, sep = '\t', index=False)
 
@@ -56,7 +57,7 @@ def validate_arguments(args):
         print(arg, getattr(args, arg))
 
     assert os.path.isfile(args.input_file)
-    assert os.path.isfile(args.map_bedgraph)
+    #assert os.path.isfile(args.map_bedgraph)
     #assert os.path.isfile(args.cell_labels)
     for bam in args.bams:
         #print(dir)
@@ -213,6 +214,21 @@ def extract_read_features(df, data_dirs, cell_labels = None, subsample = False, 
 
     del df['filename']
     return df
+
+
+def run_mappability_by_chrm(df, map_dir):
+    chrm_files = {f'chr{chrm}': os.path.join(map_dir, f'chr{chrm}.bedGraph') for chrm in range(1, 23)}  # Assuming chromosomes 1-22
+    chrm_files.update({'chrX': os.path.join(map_dir, 'chrX.bedGraph'), 'chrY': os.path.join(map_dir, 'chrY.bedGraph')})
+
+    dfs = []
+    for chrm, map_file in chrm_files.items():
+        df_chrm = df[df['chrm'] == chrm]
+        if df_chrm.empty:
+            df_chrm = df[df['chrm'] == chrm.replace('chr', '')]  
+        if not df_chrm.empty:
+            dfs.append(run_mappability(df_chrm, map_file))
+
+    return pd.concat(dfs, ignore_index=True)
 
 def run_mappability(df, mappability):
     """

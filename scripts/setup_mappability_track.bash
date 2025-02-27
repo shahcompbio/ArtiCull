@@ -31,8 +31,18 @@ curl -O "$URL" || { echo "Download failed!"; exit 1; }
 echo "Converting to BedGraph. This may take a few minutes..."
 bigWigToBedGraph "$FILE" "${GENOME}_mappability.bedGraph" || { echo "Conversion failed!"; exit 1; }
 
+
+
+# Create mappability directory
+mkdir -p "$OUTPUT_DIR/mappability"
+
+# Split BedGraph into individual chromosome files
+echo "Splitting BedGraph into individual chromosome files..."
+awk '{print > ("'"$OUTPUT_DIR/mappability/"'" $1 ".bedGraph")}' "${GENOME}_mappability.bedGraph" || { echo "Splitting failed!"; exit 1; }
+
 # Delete original file
 echo "Cleaning up..."
 rm "$FILE"
+rm "${GENOME}_mappability.bedGraph"
 
-echo "Setup complete! Processed file saved to: $OUTPUT_DIR/${GENOME}_mappability.bedGraph"
+echo "Setup complete! Processed files saved to: $OUTPUT_DIR/mappability/*.bedGraph"
