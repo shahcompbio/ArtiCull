@@ -16,7 +16,7 @@ import math
 def main(args):
     validate_arguments(args)
     random.seed(42)
-    maf, bams, mappability, output = args.input_file, args.bams, args.map_bedgraph, args.output
+    maf, bams, mappability, output = args.input_file, args.bams, args.resources_dir, args.output
     mappability = os.path.join(mappability, 'mappability') # 
     
     #cell_labels = None if cell_labels.lower() == 'none' else cell_labels
