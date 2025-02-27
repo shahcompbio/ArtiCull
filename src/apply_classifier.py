@@ -6,7 +6,7 @@ import os
 import numpy as np
 from multiprocessing import Pool
 
-def main(model_dir, features, output_dir, chunksize, ncores):
+def classify(model_dir, features, output_dir, chunksize, ncores):
 
     validate_arguments(model_dir, features, output_dir)
     print("1. Loading model from: {}".format(model_dir))
@@ -100,10 +100,3 @@ def write_output(df, labels, probs, output_dir):
     df['result'] = df['temp'].apply(lambda x: 'PASS' if x == 1 else "ARTIFACT")
     df['prob'] = probs
     df[['chrm', 'pos', 'result', 'prob']].to_csv(os.path.join(output_dir, 'result.tsv'), sep='\t', index=False)
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    add_parser_arguments(parser)
-    args = parser.parse_args()
-
-    main(args)

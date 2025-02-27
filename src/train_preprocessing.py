@@ -12,7 +12,7 @@ from utils_io import get_variants
 from utils_bams import match_variants_to_filenames, get_sam, generate_reads
 
 
-def main(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn):
+def preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn):
     
     validate_arguments(maf, bam_dirs, output_dir, signals_dir, cellclone_file, hscn_file)
 
@@ -211,12 +211,3 @@ def plot_ccfs(df, output, clone_ids):
     g = sns.pairplot(df_plot, kind='scatter', plot_kws={'alpha':0.2, 's':8}, corner=True)
     g.set(xlim=(-0.1,1.1), ylim = (-0.1,1.1))
     pyplot.savefig(output, bbox_inches = 'tight')
-
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    add_parser_arguments(parser)
-    args = parser.parse_args()
-
-    main(args)

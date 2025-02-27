@@ -59,28 +59,28 @@ def run_module(args):
     if mode == 'extract_features':
         import extract_features 
         maf, bams, mappability, output = args.input_file, args.bams, args.resources_dir, args.output
-        extract_features.main(maf, bams, mappability, output)
+        extract_features.extract_features(maf, bams, mappability, output)
 
     elif mode == 'train_classifier':
         import train_classifier 
         filelist, model_type, no_label_prop, output_dir = args.file_list, args.model, args.no_label_prop, args.output_dir
-        train_classifier.main(filelist, model_type, no_label_prop, output_dir)
+        train_classifier.train_classifier(filelist, model_type, no_label_prop, output_dir)
 
     elif mode == 'train_preprocessing':
         import train_preprocessing
         maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn = \
         args.maf, args.bam_dirs, args.signals_dir, args.output_dir, args.fullbam, args.cell_clones, args.hscn, args.use_cached_cn
-        train_preprocessing.main(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn)
+        train_preprocessing.preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn)
 
     elif mode == 'train_genlabels':
         import train_gen_labels
         input_file, output_dir, clone1, clone2, alpha = args.input_file, args.output_dir, args.clone1, args.clone2, args.alpha
-        train_gen_labels.main(input_file, output_dir, clone1, clone2, alpha)
+        train_gen_labels.generate_labels(input_file, output_dir, clone1, clone2, alpha)
 
     elif mode == 'classify':
         import apply_classifier
         model_dir, features, output_dir, chunksize, ncores= args.model_dir, args.features, args.output_dir, args.chunksize, args.cores
-        apply_classifier.main(model_dir, features, output_dir, chunksize, ncores)
+        apply_classifier.classify(model_dir, features, output_dir, chunksize, ncores)
 
     else: 
         raise KeyError('Invalid mode provided: {} \nMode must be one of {}'.format(mode, str(modes_parser_setup.keys())))

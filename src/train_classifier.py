@@ -15,7 +15,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.calibration import CalibratedClassifierCV
 
-def main(filelist, model_type, no_label_prop, output_dir):
+def train_classifier(filelist, model_type, no_label_prop, output_dir):
 
     validate_arguments(filelist, output_dir)
 
@@ -134,10 +134,3 @@ def read_input_data(filename):
     labels = df.assignment.copy()
 
     return data, labels
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    add_parser_arguments(parser)
-    args = parser.parse_args()
-
-    main(args)

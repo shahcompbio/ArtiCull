@@ -13,7 +13,7 @@ from utils_bams import match_variants_to_filenames,  generate_reads,  get_sam, g
 from scipy.stats import binomtest
 import math
 
-def main(maf, bams, mappability, output):
+def extract_features(maf, bams, mappability, output):
     
     validate_arguments(maf, bams, mappability, output)
     random.seed(42)
@@ -56,7 +56,6 @@ def validate_arguments(input_file, bams, resources_dir, output):
         assert os.access(bam, os.R_OK), (
             f"Input bam file exists, but cannot be read due to permissions: {bam}"
         )
-
 
 import functools
 @functools.lru_cache # memoizes
@@ -205,9 +204,3 @@ def run_mappability(df, mappability):
         os.remove(bed.name); os.remove(bed_sorted.name); os.remove(map.name)
 
     return df
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    add_parser_arguments(parser)
-    args = parser.parse_args()
-    main(args)

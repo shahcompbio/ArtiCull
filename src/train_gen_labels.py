@@ -6,7 +6,7 @@ import pandas as pd
 import os
 import scipy.stats
 
-def main(input_file, output_dir, clone1, clone2, alpha):
+def generate_labels(input_file, output_dir, clone1, clone2, alpha):
 
     validate_arguments(input_file, output_dir)
     df = process_df(input_file, clone1, clone2)
@@ -90,10 +90,3 @@ def validate_arguments(input_file, output_dir):
     assert os.access(input_file, os.R_OK), f"Input file exists, but cannot be read due to permissions: {input_file}"
     assert os.path.isdir(output_dir), f"Output directory {output_dir} does not exist."
     assert os.access(output_dir, os.W_OK), f"Output directory exists, but cannot be written to due to permissions: {output_dir}"
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    add_parser_arguments(parser)
-    args = parser.parse_args()
-
-    main(args)
