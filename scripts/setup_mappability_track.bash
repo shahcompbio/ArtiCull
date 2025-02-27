@@ -32,7 +32,19 @@ echo "Converting to BedGraph. This may take a few minutes..."
 bigWigToBedGraph "$FILE" "${GENOME}_mappability.bedGraph" || { echo "Conversion failed!"; exit 1; }
 
 # Delete original file
-echo "Cleaning up..."
+echo "Cleaning up $FILE..."
 rm "$FILE"
 
-echo "Setup complete! Processed file saved to: $OUTPUT_DIR/${GENOME}_mappability.bedGraph"
+
+# Create mappability directory
+mkdir -p "$OUTPUT_DIR/mappability"
+
+# Split BedGraph into individual chromosome files
+echo "Splitting BedGraph into individual chromosome files..."
+awk '{print > ("'"$OUTPUT_DIR/mappability/"'" $1 ".bedGraph")}' "${GENOME}_mappability.bedGraph" || { echo "Splitting failed!"; exit 1; }
+
+# Delete full BedGraph file
+echo "Cleaning up ${GENOME}_mappability.bedGraph..."
+rm "${GENOME}_mappability.bedGraph"
+
+echo "Setup complete! Processed files saved to: $OUTPUT_DIR/mappability/*.bedGraph"

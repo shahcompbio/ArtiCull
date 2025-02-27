@@ -17,6 +17,7 @@ def main(args):
     validate_arguments(args)
     random.seed(42)
     maf, bams, mappability, output = args.input_file, args.bams, args.map_bedgraph, args.output
+    mappability = os.path.join(mappability, 'mappability') # 
     
     #cell_labels = None if cell_labels.lower() == 'none' else cell_labels
 
@@ -31,7 +32,8 @@ def main(args):
     #else:
     #    df = extract_read_features_new(df, labels, subsample, data_dirs = bam_dirs, filelist = False)
     print("\n3. Extracting Mappability from: {}\n".format(mappability) )
-    df = run_mappability(df, mappability)
+    #df = run_mappability(df, mappability)
+    df = run_mappability_by_chrm(df, mappability)
     print("4. Outputting Result to: {}\n".format(output))
     df.to_csv(output, sep = '\t', index=False)
 
@@ -47,8 +49,8 @@ def add_parser_arguments(parser):
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.abspath(os.path.join(script_dir, os.pardir))
-    default_resources_path = os.path.join(repo_root, 'resources', 'hg19_mappability.bedGraph')
-    parser.add_argument('--map_bedgraph', type=str, default=default_resources_path, help='<Optional> Mappability bedgraph (default: resources/hg19_mappability.bedGraph)')
+    default_resources_path = os.path.join(repo_root, 'resources')
+    parser.add_argument('--resources_dir', type=str, default=default_resources_path, help='<Optional> Path to directory containing folder of mappability tracks (default: {}'.format(default_resources_path))
 
 def validate_arguments(args):
     # Checks if input files exist and if output files are in directories that exist and can be written to
@@ -56,7 +58,7 @@ def validate_arguments(args):
         print(arg, getattr(args, arg))
 
     assert os.path.isfile(args.input_file)
-    assert os.path.isfile(args.map_bedgraph)
+    #assert os.path.isfile(args.map_bedgraph)
     #assert os.path.isfile(args.cell_labels)
     for bam in args.bams:
         #print(dir)
@@ -212,6 +214,20 @@ def extract_read_features(df, data_dirs, cell_labels = None, subsample = False, 
 
 
     del df['filename']
+    return df
+
+
+def run_mappability_by_chrm(df, map_dir):
+    chrm_files = {f'chr{chrm}': os.path.join(map_dir, f'chr{chrm}.bedGraph') for chrm in range(1, 23)}  # Assuming chromosomes 1-22
+    chrm_files.update({'chrX': os.path.join(map_dir, 'chrX.bedGraph'), 'chrY': os.path.join(map_dir, 'chrY.bedGraph')})
+
+    def get_map_filename(chrm):
+        if 'chr' not in chrm:
+            chrm = 'chr' + chrm
+        return os.path.join(map_dir, f'{chrm}.bedGraph')
+    
+    df = df.groupby('chrm').parallel_apply(lambda x: run_mappability(x, get_map_filename(x.iloc[0]['chrm']))).reset_index(drop=True)
+
     return df
 
 def run_mappability(df, mappability):

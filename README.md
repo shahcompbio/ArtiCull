@@ -28,17 +28,16 @@ conda activate articull-env
 
 ### 2. Setting up Genomic Data Tracks
 
-Use the provided script to download and process the reference genome mappability track:
+Use the provided script to download and process the reference genome mappability track. Note that the download requires ~1GB of space and expands to ~5GB when uncompressed.
+By default, files are saved to the `resources` directory unless an alternative output directory is specified.
 
 ```bash
 bash scripts/setup_mappability_track.bash [optional: output_directory]
 ```
 
-**Note**: 
-- By default, files are saved to the `resources` directory unless an alternative output directory is specified
-- The download requires ~1GB of space and expands to ~5GB when uncompressed
-- Currently only `hg19`/`GRCh37` is supported. Support for additional reference genomes coming soon
-- For other genome versions, please open an issue on [GitHub](https://github.com/shahcompbio/ArtiCull/issues)
+Currently only `hg19`/`GRCh37` is supported. Support for additional reference genomes coming soon. For other genome versions, please open an issue on [GitHub](https://github.com/shahcompbio/ArtiCull/issues).
+
+
 
 ## Example Usage
 
@@ -70,21 +69,21 @@ conda activate articull-env
 
 ```bash
 maf=example/example.maf
-features_output=example/articull.features.tsv
+extract_features_output=example/articull.features.tsv
 bam=example/example.bam
-mappability_file=resources/hg19_mappability.bedGraph  # update if you saved to a different location during setup
+resources_dir=resources/  # update if you saved to a different location during setup
 
-python src/main.py extract_features $maf $features_output $bam --map_bedgraph $mappability_file --cores 8 
+python src/main.py extract_features $maf $extract_features_output $bam --resources_dir $resources_dir --cores 8 
 ```
 
 ### 2. Run classification
 
 ```bash
-features=example/articull.features.tsv
+extract_features_output=example/articull.features.tsv
 output_dir=example/
 model_dir=models/preprint_model/
 
-python src/main.py classify $features $output_dir $model_dir
+python src/main.py classify $extract_features_output $output_dir $model_dir
 ```
 
 ### Output
@@ -124,7 +123,7 @@ The `extract_features` command processes input variants and generates features r
 #### Usage
 
 ```bash
-python src/main.py extract_features <input_file> <output> <bams> [--map_bedgraph <bedgraph>] [--cores <ncores>]
+python src/main.py extract_features <input_file> <output> <bams> [--resources_dir <path>] [--cores <ncores>]
 ```
 
 #### Arguments
@@ -134,7 +133,7 @@ python src/main.py extract_features <input_file> <output> <bams> [--map_bedgraph
 | `<input_file>` | Yes | Candidate variants file (MAF or VCF format) |
 | `<output>` | Yes | Output path for extracted features (tab-separated format) |
 | `<bams>` | Yes | One or more BAM files containing sequencing data |
-| `--map_bedgraph` | No | Path to mappability bedgraph file (default: `resources/hg19_mappability.bedGraph`) |
+| `--resources_dir` | No | Path to directory containing folder `mappability`  with downloaded mappability tracks [See [Setup](#setup)] (default: `resources/hg19_mappability.bedGraph`) |
 | `--cores` | No | Number of CPU cores for parallel processing |
 
 ### Running Classification
