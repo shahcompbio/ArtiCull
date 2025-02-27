@@ -53,19 +53,6 @@ def main(args):
     print(df.groupby('assignment').count())
     create_plot(df, clone1, clone2, output_dir)
 
-def add_parser_arguments(parser):
-    parser.add_argument(dest='input_file', type = str, help = '<Required> Input file containing variant counts by clone')
-    parser.add_argument(dest='output_dir', type = str, help = '<Required> Output directory')
-    parser.add_argument(dest='clone1', type = str, help = '<Required> Name of clone')
-    parser.add_argument(dest='clone2',  type = str, help = '<Required> Name of clone')
-    parser.add_argument('--alpha', default=0.1, type=float, help='Per sample FDR. Total FDR = alpha^2', required=False)
-
-def validate_arguments(args):
-    for arg in vars(args):
-        print(arg,":\t", getattr(args, arg))
-
-    assert os.path.isfile(args.input_file)
-    assert os.access(args.output_dir, os.W_OK)
 
 def process_df(input_file, clone1, clone2):
     input = pd.read_table(input_file)
@@ -95,6 +82,14 @@ def create_plot(df, clone1, clone2, output_dir):
     pyplot.xlabel('CCF Clone {}'.format(clone1))
     pyplot.ylabel('CCF Clone {}'.format(clone2))
     pyplot.savefig("{}/labeled_ccf.pdf".format(output_dir), bbox_inches='tight')
+
+
+def validate_arguments(args):
+    for arg in vars(args):
+        print(arg,":\t", getattr(args, arg))
+
+    assert os.path.isfile(args.input_file)
+    assert os.access(args.output_dir, os.W_OK)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

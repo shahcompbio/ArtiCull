@@ -55,14 +55,6 @@ def write_output_chunk(df, probs, output_dir, first):
     else:
         out_df.to_csv(out_file, mode = 'a', header = False, sep='\t', index=False)
 
-def add_parser_arguments(parser):
-    parser.add_argument(dest='features', type = str, help = '<Required> Input file containing variant features')
-    parser.add_argument(dest='output_dir', type = str, help = '<Required> Output directory')
-    parser.add_argument(dest='model_dir', type = str, help = '<Required> Directory containing model.pkl and scaler.plk')
-
-    DEFAULT_CHUNKSIZE = 5000
-    parser.add_argument('--chunksize', type = int, default = DEFAULT_CHUNKSIZE, required = False,
-                        help = F'<Optional> Number of rows per worker (default {DEFAULT_CHUNKSIZE})')
 
 def validate_arguments(args):
     for arg in vars(args):

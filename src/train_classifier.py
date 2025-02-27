@@ -99,12 +99,6 @@ def compute_performance_stats(inferred, groundtruth):
 
     return accuracy, precision, recall
 
-def add_parser_arguments(parser):
-    parser.add_argument(dest='file_list', type = str, help = '<Required> file containing list of training data')
-    parser.add_argument(dest='output_dir', type = str, help = '<Required> Output directory')
-    parser.add_argument('--model', type=str, default='gradientboosting', help = 'Model used for classification')
-    parser.add_argument('--no_label_prop', action='store_true', help = 'Don\'t use label propagation to fill in missing labels')
-
 def validate_arguments(args):
     # Checks if input files exist and if output files are in directories that exist and can be written to
     for arg in vars(args):

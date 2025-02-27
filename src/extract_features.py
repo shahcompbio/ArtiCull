@@ -16,7 +16,7 @@ import math
 def main(args):
     validate_arguments(args)
     random.seed(42)
-    maf, bams, mappability, output = args.input_file, args.bams, args.map_bedgraph, args.output
+    maf, bams, mappability, output = args.input_file, args.bams, args.resources_dir, args.output
     mappability = os.path.join(mappability, 'mappability') # 
     print("1. Reading Variants from: {}\n".format(maf))
     df = get_variants(maf)
@@ -31,16 +31,6 @@ def input_cell_labels(filename, patient_id):
     df = pd.read_table(filename, sep='\t')
     df = df[df['patient_id']== patient_id].set_index('cell_id')
     return df[['is_normal_cell', 'is_high_quality_normal_cell']]
-
-def add_parser_arguments(parser):
-    parser.add_argument(dest='input_file', type = str, help = '<Required> file containing candidate variants')
-    parser.add_argument(dest='output', type = str, help = '<Required> Full path and name of output file')
-    parser.add_argument(dest='bams', nargs="+", type = str, help = '<Required> list of bam files')
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    repo_root = os.path.abspath(os.path.join(script_dir, os.pardir))
-    default_resources_path = os.path.join(repo_root, 'resources')
-    parser.add_argument('--resources_dir', type=str, default=default_resources_path, help='<Optional> Path to directory containing folder of mappability tracks (default: {}'.format(default_resources_path))
 
 def validate_arguments(args):
     # Checks if input files exist and if output files are in directories that exist and can be written to

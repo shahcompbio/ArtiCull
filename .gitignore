@@ -9,3 +9,5 @@ temp/*
 *.bedGraph
 *.bigWig
 *.bw
+example/result.tsv
+example/articull.features.tsv

@@ -8,8 +8,8 @@ import subprocess
 from matplotlib import pyplot # type: ignore
 import seaborn as sns # type: ignore
 
-from .utils_io import get_variants
-from .utils_bams import match_variants_to_filenames, get_sam, generate_reads
+from utils_io import get_variants
+from utils_bams import match_variants_to_filenames, get_sam, generate_reads
 
 
 def main(args):
@@ -44,26 +44,16 @@ def main(args):
     print("6. Creating clone CCF plot at: {}".format(plot_filename))
     plot_ccfs(df, plot_filename, clone_ids)
 
-def add_parser_arguments(parser):
-    parser.add_argument(dest='maf', type = str, help = '<Required> maf file containing candidate variants')
-    parser.add_argument(dest='output_dir', type = str, help = '<Required> Full path and name of output file')
-    parser.add_argument(dest='bam_dirs', nargs="+", type = str, help = '<Required> list of bam directories')
-    parser.add_argument('--signals_dir', type = str, help = 'Directory of signals results')
-    parser.add_argument('--cell_clones', type = str, help = 'Cell to clone mapping')
-    parser.add_argument('--hscn', type = str, help='Signals HSCN file')
-    parser.add_argument('--fullbam', action="store_true", help ='The list of bams is provided and not in region format')
-    parser.add_argument('--use_cached_cn', action="store_true", help = 'Use already processed cell-to-clone map if it exists')
 
 def validate_arguments(args):
     # Checks if input files exist and if output files are in directories that exist and can be written to
     for arg in vars(args):
         print(arg, getattr(args, arg))
 
-    assert path.isfile(args.maf)
-    #assert path.isdir(args.signals_dir)
-    #for dir in args.bam_dirs:
-    #    assert path.isdir(dir)
+    assert os.path.isfile(args.maf)
     assert os.access(args.output_dir, os.W_OK)
+
+
 
 def process_signals(df, signals_dir, output_dir, use_cached):
 
