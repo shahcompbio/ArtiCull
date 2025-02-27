@@ -4,8 +4,6 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 import os
-
-#from mixture_model_EM import *
 import scipy.stats
 
 def shared_subclonal(mut, alpha):
@@ -23,7 +21,6 @@ def shared_subclonal(mut, alpha):
     private1 = scipy.stats.binomtest(v1, n=t1, p=eps, alternative='greater').pvalue
 
     private2 = scipy.stats.binomtest(v2, n=t2, p=eps, alternative='greater').pvalue
-
 
     return all([p < alpha for p in [clonal1, clonal2, private1, private2]]) #and mut['ccf_1'] < 0.75 and mut['ccf_2'] < 0.75
 
@@ -48,8 +45,6 @@ def get_assignment(mut, alpha):
     else: return -1
 
 def main(args):
-
-    # df = df_orig.sample(n=1000, random_state = 1)
     validate_arguments(args)
     input_file, output_dir, clone1, clone2, alpha = args.input_file, args.output_dir, args.clone1, args.clone2, args.alpha
     df = process_df(input_file, clone1, clone2)
@@ -64,7 +59,6 @@ def add_parser_arguments(parser):
     parser.add_argument(dest='clone1', type = str, help = '<Required> Name of clone')
     parser.add_argument(dest='clone2',  type = str, help = '<Required> Name of clone')
     parser.add_argument('--alpha', default=0.1, type=float, help='Per sample FDR. Total FDR = alpha^2', required=False)
-
 
 def validate_arguments(args):
     for arg in vars(args):
@@ -87,7 +81,6 @@ def process_df(input_file, clone1, clone2):
     return df
 
 def create_plot(df, clone1, clone2, output_dir):
-    #c = [np.argmax(r) for r in df['responsibilities']]
     pyplot.gcf().set_size_inches(12,12)
     df = df.sort_values(by = 'assignment')
     c = df['assignment']
@@ -109,5 +102,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args)
-
-# TODO: Handle error rate correctly

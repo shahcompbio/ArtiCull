@@ -2,11 +2,11 @@ import argparse
 import os
 
 def setup_module_arguments(parser):
-    import train_preprocessing
-    import extract_features
-    import train_gen_labels
-    import train_classifier
-    import apply_classifier
+    from . import train_preprocessing
+    from . import extract_features
+    from . import train_gen_labels
+    from . import train_classifier
+    from . import apply_classifier
 
     modes = {
             "extract_features" : extract_features,

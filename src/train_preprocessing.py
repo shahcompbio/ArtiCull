@@ -8,8 +8,8 @@ import subprocess
 from matplotlib import pyplot # type: ignore
 import seaborn as sns # type: ignore
 
-from utils_io import get_variants
-from utils_bams import match_variants_to_filenames, get_sam, generate_reads
+from .utils_io import get_variants
+from .utils_bams import match_variants_to_filenames, get_sam, generate_reads
 
 
 def main(args):

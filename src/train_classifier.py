@@ -117,7 +117,6 @@ def read_input_data(filename):
     Filename contains a list of pairs of files, one for each sample or individual: (feature_file, label_file)
     These files should be output from extract_features and mixture_model respectively
     """
-
     dfs = []
     with open(filename) as f:
         for i, line in enumerate(f):
@@ -133,10 +132,8 @@ def read_input_data(filename):
             df_labeled = df[df['assignment'] != -1]
             df_unlabeled = downsample_unlabeled(df[df['assignment'] == -1])
 
-
             dfs.append(df_labeled)
             dfs.append(df_unlabeled)
-
 
     df = pd.concat(dfs).dropna()
 
