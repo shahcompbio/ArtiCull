@@ -17,6 +17,7 @@ def main(args):
     validate_arguments(args)
     random.seed(42)
     maf, bams, mappability, output = args.input_file, args.bams, args.map_bedgraph, args.output
+    mappability = os.path.join(mappability, 'mappability') # 
     
     #cell_labels = None if cell_labels.lower() == 'none' else cell_labels
 
@@ -48,8 +49,8 @@ def add_parser_arguments(parser):
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.abspath(os.path.join(script_dir, os.pardir))
-    default_resources_path = os.path.join(repo_root, 'resources', 'hg19_mappability.bedGraph')
-    parser.add_argument('--map_bedgraph', type=str, default=default_resources_path, help='<Optional> Mappability bedgraph (default: resources/hg19_mappability.bedGraph)')
+    default_resources_path = os.path.join(repo_root, 'resources')
+    parser.add_argument('--resources_dir', type=str, default=default_resources_path, help='<Optional> Path to directory containing folder of mappability tracks (default: {}'.format(default_resources_path))
 
 def validate_arguments(args):
     # Checks if input files exist and if output files are in directories that exist and can be written to
