@@ -220,15 +220,14 @@ def run_mappability_by_chrm(df, map_dir):
     chrm_files = {f'chr{chrm}': os.path.join(map_dir, f'chr{chrm}.bedGraph') for chrm in range(1, 23)}  # Assuming chromosomes 1-22
     chrm_files.update({'chrX': os.path.join(map_dir, 'chrX.bedGraph'), 'chrY': os.path.join(map_dir, 'chrY.bedGraph')})
 
-    dfs = []
-    for chrm, map_file in chrm_files.items():
-        df_chrm = df[df['chrm'] == chrm]
-        if df_chrm.empty:
-            df_chrm = df[df['chrm'] == chrm.replace('chr', '')]  
-        if not df_chrm.empty:
-            dfs.append(run_mappability(df_chrm, map_file))
+    def get_map_filename(chrm):
+        if 'chr' not in chrm:
+            chrm = 'chr' + chrm
+        return os.path.join(map_dir, f'{chrm}.bedGraph')
+    
+    df = df.groupby('chrm').parallel_apply(lambda x: run_mappability(x, get_map_filename(x.iloc[0]['chrm']))).reset_index(drop=True)
 
-    return pd.concat(dfs, ignore_index=True)
+    return df
 
 def run_mappability(df, mappability):
     """
