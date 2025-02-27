@@ -13,8 +13,8 @@ from utils_bams import match_variants_to_filenames,  generate_reads,  get_sam, g
 from scipy.stats import binomtest
 import math
 
-def main(args):
-    maf, bams, mappability, output = args.input_file, args.bams, args.resources_dir, args.output
+def main(maf, bams, mappability, output):
+    
     validate_arguments(maf, bams, mappability, output)
     random.seed(42)
     mappability = os.path.join(mappability, 'mappability') 

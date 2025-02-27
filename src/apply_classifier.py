@@ -6,16 +6,15 @@ import os
 import numpy as np
 from multiprocessing import Pool
 
-def main(args):
-    model_dir, features, output_dir, chunksize = args.model_dir, args.features, args.output_dir, args.chunksize
+def main(model_dir, features, output_dir, chunksize, ncores):
+
     validate_arguments(model_dir, features, output_dir)
     print("1. Loading model from: {}".format(model_dir))
     model, scaler = load_model(model_dir)
     print("2. Classifying data from: {}".format(features))
     nlines = sum(1 for _ in open(features, 'r'))-1
 
-    if args.cores: ncores = args.cores
-    else:
+    if not ncores: 
         import psutil
         ncores = psutil.cpu_count(logical=False)
 

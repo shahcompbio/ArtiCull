@@ -12,10 +12,8 @@ from utils_io import get_variants
 from utils_bams import match_variants_to_filenames, get_sam, generate_reads
 
 
-def main(args):
-    maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn = \
-        args.maf, args.bam_dirs, args.signals_dir, args.output_dir, args.fullbam, args.cell_clones, args.hscn, args.use_cached_cn
-
+def main(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn):
+    
     validate_arguments(maf, bam_dirs, output_dir, signals_dir, cellclone_file, hscn_file)
 
     

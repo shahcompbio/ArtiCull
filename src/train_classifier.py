@@ -15,10 +15,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.calibration import CalibratedClassifierCV
 
-def main(args):
-    filelist, model_type, no_label_prop, output_dir = args.file_list, args.model, args.no_label_prop, args.output_dir
+def main(filelist, model_type, no_label_prop, output_dir):
+
     validate_arguments(filelist, output_dir)
-    
+
     data, labels = read_input_data(filelist)
     data_train, data_test, labels_train, labels_test = train_test_split(data, labels, test_size=0.20, random_state=42)
 

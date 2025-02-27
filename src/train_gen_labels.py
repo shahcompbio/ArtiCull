@@ -6,8 +6,8 @@ import pandas as pd
 import os
 import scipy.stats
 
-def main(args):
-    input_file, output_dir, clone1, clone2, alpha = args.input_file, args.output_dir, args.clone1, args.clone2, args.alpha
+def main(input_file, output_dir, clone1, clone2, alpha):
+
     validate_arguments(input_file, output_dir)
     df = process_df(input_file, clone1, clone2)
     df['assignment'] = df.parallel_apply(lambda x: get_assignment(x, alpha), axis=1)
