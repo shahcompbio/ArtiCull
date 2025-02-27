@@ -1,5 +1,5 @@
+
 import os
-import argparse
 import subprocess
 import tempfile
 import numpy
@@ -14,6 +14,17 @@ from scipy.stats import binomtest
 import math
 
 def extract_features(maf, bams, mappability, output):
+    """
+    Extracts features from given MAF (Mutation Annotation Format) file, BAM files, and mappability data, 
+    and outputs the result to a specified file.
+    Parameters:
+    maf (str): Path to the MAF file containing variant information.
+    bams (str): Path to the directory containing BAM files.
+    mappability (str): Path to the directory containing mappability data.
+    output (str): Path to the output file where the extracted features will be saved.
+    Returns:
+    None
+    """
     
     validate_arguments(maf, bams, mappability, output)
     random.seed(42)
@@ -27,12 +38,21 @@ def extract_features(maf, bams, mappability, output):
     print("4. Outputting Result to: {}\n".format(output))
     df.to_csv(output, sep = '\t', index=False)
 
-def input_cell_labels(filename, patient_id):
-    df = pd.read_table(filename, sep='\t')
-    df = df[df['patient_id']== patient_id].set_index('cell_id')
-    return df[['is_normal_cell', 'is_high_quality_normal_cell']]
 
 def validate_arguments(input_file, bams, resources_dir, output):
+    """
+    Validates the input arguments for the feature extraction process.
+    Parameters:
+    input_file (str): Path to the input file.
+    bams (list of str): List of paths to BAM files.
+    resources_dir (str): Path to the resources directory.
+    output (str): Path to the output file.
+    Raises:
+    AssertionError: If any of the input files do not exist or cannot be read.
+    AssertionError: If the resources directory does not exist or does not contain a mappability directory.
+    AssertionError: If the output directory does not exist or cannot be written to.
+    """
+
     # Checks if input files exist and if output files are in directories that exist and can be written to
     assert os.path.isfile(input_file), f"Input file {input_file} does not exist."
     assert os.access(input_file, os.R_OK), (
@@ -60,9 +80,49 @@ def validate_arguments(input_file, bams, resources_dir, output):
 import functools
 @functools.lru_cache # memoizes
 def binomtest_memo(k, n):
+    """
+    Perform a binomial test and return the logarithm of the p-value.
+    Memoizes the results to avoid redundant calculations.
+    Parameters:
+    k (int): The number of successes.
+    n (int): The number of trials.
+    Returns:
+    float: The natural logarithm of the p-value from the binomial test.
+    """
+
     return math.log(binomtest(k, n).pvalue)
 
 def extract_read_features(df, cell_labels = None, subsample = False, data_dirs=False, filelist=False):
+    def extract_read_features(df, cell_labels=None, subsample=False, data_dirs=False, filelist=False):
+        """
+        Extracts read features from a given DataFrame of variants.
+        Parameters:
+        df (pandas.DataFrame): DataFrame containing variant information.
+        cell_labels (list, optional): List of cell labels to filter reads. Defaults to None.
+        subsample (bool, optional): Whether to subsample reads. Defaults to False.
+        data_dirs (list, optional): List of directories containing SAM files. Defaults to False.
+        filelist (list, optional): List of file paths to SAM files. Defaults to False.
+        Returns:
+        pandas.DataFrame: DataFrame with extracted features.
+        Raises:
+        Exception: If neither data_dirs nor filelist is provided.
+        Features Extracted:
+        - f_mean_len: Mean length of alternative reads.
+        - f_mean_tlen: Mean template length of alternative reads.
+        - f_p_softclip: Proportion of alternative reads with soft clipping.
+        - f_mean_mapq: Mean mapping quality of alternative reads.
+        - f_mean_mm: Mean number of mismatches in alternative reads.
+        - f_p_ins: Proportion of alternative reads with insertions.
+        - f_p_del: Proportion of alternative reads with deletions.
+        - f_mean_readend: Mean distance to read end in alternative reads.
+        - f_std_start: Standard deviation of start positions of aligned blocks in alternative reads.
+        - f_std_end: Standard deviation of end positions of aligned blocks in alternative reads.
+        - f_p_matemapped: Proportion of alternative reads with mapped mates.
+        - f_directionality: Directionality score of alternative reads.
+        - f_p_normal: Proportion of normal reads.
+        - f_p_XA: Proportion of alternative reads with XA tag.
+        - f_mean_XS: Mean XS tag value of alternative reads.
+        """
 
     def mean(data):
         try: mean = sum(data)/len(data)
@@ -139,6 +199,19 @@ def extract_read_features(df, cell_labels = None, subsample = False, data_dirs=F
     return df
 
 def run_mappability_by_chrm(df, map_dir):
+    """
+    Calculate mappability for each chromosome in the given DataFrame.
+    This function groups the input DataFrame by chromosome and applies the 
+    `run_mappability` function to each group. The mappability data is read 
+    from bedGraph files located in the specified directory.
+    Parameters:
+    df (pandas.DataFrame): Input DataFrame containing genomic data. 
+                        It must have a column named 'chrm' indicating the chromosome.
+    map_dir (str): Directory path where the bedGraph files for each chromosome are stored.
+    Returns:
+    pandas.DataFrame: DataFrame with mappability information added for each chromosome.
+    """
+
     chrm_files = {f'chr{chrm}': os.path.join(map_dir, f'chr{chrm}.bedGraph') for chrm in range(1, 23)}  # Assuming chromosomes 1-22
     chrm_files.update({'chrX': os.path.join(map_dir, 'chrX.bedGraph'), 'chrY': os.path.join(map_dir, 'chrY.bedGraph')})
 
@@ -153,12 +226,23 @@ def run_mappability_by_chrm(df, map_dir):
 
 def run_mappability(df, mappability):
     """
-    Gets the average mappability of the region using bedtools to intersect with
-    the mappability bedGraph
-    Note: This is fairly slow in practice. In a future version, I want to split up the processing. 
-    Subdivide the mappability file into chunks and run the intersection in parallel. 
+    Annotates a DataFrame with mappability scores.
+    This function takes a DataFrame containing genomic positions and annotates it with mappability scores
+    by creating a BED file, intersecting it with a mappability file using bedtools, and then joining the
+    results back to the original DataFrame.
+    Parameters:
+    df (pd.DataFrame): DataFrame containing genomic positions with columns ['chrm', 'pos'].
+    mappability (str): Path to the mappability file.
+    Returns:
+    pd.DataFrame: DataFrame with an additional column 'f_map' containing the mappability scores.
+    Raises:
+    subprocess.CalledProcessError: If bedtools commands fail.
+    Warning: If the number of rows in the resulting DataFrame does not match the original DataFrame.
+    Notes:
+    - The function assumes that the 'chrm' column in the input DataFrame may or may not start with 'chr'.
+    - Temporary files are created and deleted within the function.
     """
-    # mappability is in chrN chromosome format. 
+
 
     def write_bedfile(df, bed):
         bed_df = df[['chrm', 'pos']]
