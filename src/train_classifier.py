@@ -16,14 +16,12 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.calibration import CalibratedClassifierCV
 
 def main(args):
-    validate_arguments(args)
-    data, labels = read_input_data(args.file_list)
-    model_type = args.model
-    no_label_prop = args.no_label_prop
-
+    filelist, model_type, no_label_prop, output_dir = args.file_list, args.model, args.no_label_prop, args.output_dir
+    validate_arguments(filelist, output_dir)
+    
+    data, labels = read_input_data(filelist)
     data_train, data_test, labels_train, labels_test = train_test_split(data, labels, test_size=0.20, random_state=42)
 
-    print(len(data))
     # Standard scale data
     scaled_data_train, scaler = scale_data(data_train)
     print(scaled_data_train.sum())
@@ -31,8 +29,8 @@ def main(args):
     print(scaled_data_test.sum())
 
     model = train_model(scaled_data_train, labels_train, model_type, no_label_prop=no_label_prop)
-    test_model(scaled_data_test, labels_test, model, args.output_dir)
-    write_model(model, scaler, args.output_dir)
+    test_model(scaled_data_test, labels_test, model, output_dir)
+    write_model(model, scaler, output_dir)
 
 def downsample_unlabeled(data, n=1000):
     try:
@@ -99,12 +97,12 @@ def compute_performance_stats(inferred, groundtruth):
 
     return accuracy, precision, recall
 
-def validate_arguments(args):
+def validate_arguments(filelist, output_dir):
     # Checks if input files exist and if output files are in directories that exist and can be written to
-    for arg in vars(args):
-        print(arg, ':\t', getattr(args, arg))
-
-    assert os.path.isfile(args.file_list)
+    assert os.path.isfile(filelist), f"Input file {filelist} does not exist."
+    assert os.access(filelist, os.R_OK), f"Input file exists, but cannot be read due to permissions: {filelist}"
+    assert os.path.isdir(output_dir), f"Output directory {output_dir} does not exist."
+    assert os.access(output_dir, os.W_OK), f"Output directory exists, but cannot be written to due to permissions: {output_dir}"
 
 def read_input_data(filename):
     """

@@ -13,11 +13,12 @@ from utils_bams import match_variants_to_filenames, get_sam, generate_reads
 
 
 def main(args):
-    validate_arguments(args)
-
     maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn = \
         args.maf, args.bam_dirs, args.signals_dir, args.output_dir, args.fullbam, args.cell_clones, args.hscn, args.use_cached_cn
 
+    validate_arguments(maf, bam_dirs, output_dir, signals_dir, cellclone_file, hscn_file)
+
+    
     print("1. Reading variants from: {}".format(maf))
     df = get_variants(maf)
 
@@ -45,14 +46,41 @@ def main(args):
     plot_ccfs(df, plot_filename, clone_ids)
 
 
-def validate_arguments(args):
+def validate_arguments(maf, bam_dirs, output_dir, signals_dir, cellclone_file, hscn_file):
     # Checks if input files exist and if output files are in directories that exist and can be written to
-    for arg in vars(args):
-        print(arg, getattr(args, arg))
-
-    assert os.path.isfile(args.maf)
-    assert os.access(args.output_dir, os.W_OK)
-
+    assert os.path.isfile(args.maf), f"Input file {maf} does not exist."
+    assert os.access(args.maf, os.R_OK), (
+        f"Input file exists, but cannot be read due to permissions: {maf}"
+    )
+    assert os.path.isdir(args.output_dir), f"Output directory {output_dir} does not exist."
+    assert os.access(args.output_dir, os.W_OK), (  
+        f"Output directory exists, but cannot be written to due to permissions: {output_dir}"
+    )
+    for bam in bam_dirs:
+        assert os.path.isfile(bam), f"Input bam file {bam} does not exist."
+        assert os.access(bam, os.R_OK), (
+            f"Input bam file exists, but cannot be read due to permissions: {bam}"
+        )
+    if signals_dir:
+        assert os.path.isdir(signals_dir), f"Signals directory {signals_dir} does not exist."
+        assert os.access(signals_dir, os.R_OK), (
+            f"Signals directory exists, but cannot be read due to permissions: {signals_dir}"
+        )
+    if cellclone_file:
+        assert os.path.isfile(cellclone_file), f"Cell to clone mapping file {cellclone_file} does not exist."
+        assert os.access(cellclone_file, os.R_OK), (
+            f"Cell to clone mapping file exists, but cannot be read due to permissions: {cellclone_file}"
+        )
+    if hscn_file:
+        assert os.path.isfile(hscn_file), f"Signals HSCN file {hscn_file} does not exist."
+        assert os.access(hscn_file, os.R_OK), (
+            f"Signals HSCN file exists, but cannot be read due to permissions: {hscn_file}"
+        )
+    if output_dir:
+        assert os.path.isdir(output_dir), f"Output directory {output_dir} does not exist."
+        assert os.access(output_dir, os.R_OK), (
+            f"Output directory exists, but cannot be read due to permissions: {output_dir}"
+        )
 
 
 def process_signals(df, signals_dir, output_dir, use_cached):

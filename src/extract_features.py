@@ -14,10 +14,10 @@ from scipy.stats import binomtest
 import math
 
 def main(args):
-    validate_arguments(args)
-    random.seed(42)
     maf, bams, mappability, output = args.input_file, args.bams, args.resources_dir, args.output
-    mappability = os.path.join(mappability, 'mappability') # 
+    validate_arguments(maf, bams, mappability, output)
+    random.seed(42)
+    mappability = os.path.join(mappability, 'mappability') 
     print("1. Reading Variants from: {}\n".format(maf))
     df = get_variants(maf)
     print("2. Extracting Read Features from: {}".format(bams))
@@ -32,14 +32,31 @@ def input_cell_labels(filename, patient_id):
     df = df[df['patient_id']== patient_id].set_index('cell_id')
     return df[['is_normal_cell', 'is_high_quality_normal_cell']]
 
-def validate_arguments(args):
+def validate_arguments(input_file, bams, resources_dir, output):
     # Checks if input files exist and if output files are in directories that exist and can be written to
-    for arg in vars(args):
-        print(arg, getattr(args, arg))
-    assert os.path.isfile(args.input_file)
-    for bam in args.bams:
-        assert os.path.isfile(bam)
-    assert os.access(os.path.dirname(args.output), os.W_OK)
+    assert os.path.isfile(input_file), f"Input file {input_file} does not exist."
+    assert os.access(input_file, os.R_OK), (
+        f"Input file exists, but cannot be read due to permissions: {input_file}"
+    )
+    assert os.path.isdir(resources_dir), (
+        f"Resources directory {resources_dir} does not exist. "
+        "See setup instructions for how to download the resources."
+    )
+    assert os.path.isdir(os.path.join(resources_dir, 'mappability')), (
+        f"Resources directory {resources_dir} does not contain a mappability directory. "
+        "See setup instructions for how to download the resources."
+    )
+    output_dir = os.path.dirname(output)
+    assert os.path.isdir(output_dir), f"Output directory {output_dir} does not exist."
+    assert os.access(output_dir, os.W_OK), (
+        f"Output directory exists, but cannot be written to due to permissions: {output_dir}"
+    )
+    for bam in bams:
+        assert os.path.isfile(bam), f"Input bam file {bam} does not exist."
+        assert os.access(bam, os.R_OK), (
+            f"Input bam file exists, but cannot be read due to permissions: {bam}"
+        )
+
 
 import functools
 @functools.lru_cache # memoizes

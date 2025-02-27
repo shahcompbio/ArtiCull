@@ -6,6 +6,15 @@ import pandas as pd
 import os
 import scipy.stats
 
+def main(args):
+    input_file, output_dir, clone1, clone2, alpha = args.input_file, args.output_dir, args.clone1, args.clone2, args.alpha
+    validate_arguments(input_file, output_dir)
+    df = process_df(input_file, clone1, clone2)
+    df['assignment'] = df.parallel_apply(lambda x: get_assignment(x, alpha), axis=1)
+    df.to_csv("{}/assignments.tsv".format(output_dir), sep='\t', index=False)
+    print(df.groupby('assignment').count())
+    create_plot(df, clone1, clone2, output_dir)
+
 def shared_subclonal(mut, alpha):
     v1, t1 = mut['var_1'], mut['tot_1']
     v2, t2 = mut['var_2'], mut['tot_2']
@@ -44,14 +53,6 @@ def get_assignment(mut, alpha):
     elif shared_clonal(mut, alpha): return 1
     else: return -1
 
-def main(args):
-    validate_arguments(args)
-    input_file, output_dir, clone1, clone2, alpha = args.input_file, args.output_dir, args.clone1, args.clone2, args.alpha
-    df = process_df(input_file, clone1, clone2)
-    df['assignment'] = df.parallel_apply(lambda x: get_assignment(x, alpha), axis=1)
-    df.to_csv("{}/assignments.tsv".format(output_dir), sep='\t', index=False)
-    print(df.groupby('assignment').count())
-    create_plot(df, clone1, clone2, output_dir)
 
 
 def process_df(input_file, clone1, clone2):
@@ -84,12 +85,11 @@ def create_plot(df, clone1, clone2, output_dir):
     pyplot.savefig("{}/labeled_ccf.pdf".format(output_dir), bbox_inches='tight')
 
 
-def validate_arguments(args):
-    for arg in vars(args):
-        print(arg,":\t", getattr(args, arg))
-
-    assert os.path.isfile(args.input_file)
-    assert os.access(args.output_dir, os.W_OK)
+def validate_arguments(input_file, output_dir):
+    assert os.path.isfile(input_file), f"Input file {input_file} does not exist."
+    assert os.access(input_file, os.R_OK), f"Input file exists, but cannot be read due to permissions: {input_file}"
+    assert os.path.isdir(output_dir), f"Output directory {output_dir} does not exist."
+    assert os.access(output_dir, os.W_OK), f"Output directory exists, but cannot be written to due to permissions: {output_dir}"
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

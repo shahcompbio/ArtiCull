@@ -7,23 +7,24 @@ import numpy as np
 from multiprocessing import Pool
 
 def main(args):
-    validate_arguments(args)
-    print("1. Loading model from: {}".format(args.model_dir))
-    model, scaler = load_model(args.model_dir)
-    print("2. Classifying data from: {}".format(args.features))
-    nlines = sum(1 for _ in open(args.features, 'r'))-1
+    model_dir, features, output_dir, chunksize = args.model_dir, args.features, args.output_dir, args.chunksize
+    validate_arguments(model_dir, features, output_dir)
+    print("1. Loading model from: {}".format(model_dir))
+    model, scaler = load_model(model_dir)
+    print("2. Classifying data from: {}".format(features))
+    nlines = sum(1 for _ in open(features, 'r'))-1
 
     if args.cores: ncores = args.cores
     else:
         import psutil
         ncores = psutil.cpu_count(logical=False)
 
-    df_reader = pd.read_table(args.features, chunksize=args.chunksize)
+    df_reader = pd.read_table(features, chunksize=chunksize)
     for i, df in enumerate(df_reader):
-        print('\r\t{}/{} variants completed'.format(i*args.chunksize, nlines), end = '')
+        print('\r\t{}/{} variants completed'.format(i*chunksize, nlines), end = '')
         first = (i == 0)
         df['f_p_normal'] = df['f_p_normal'].fillna(0)
-        process_chunk(df, model, scaler, args.output_dir, ncores, first)
+        process_chunk(df, model, scaler, output_dir, ncores, first)
     print('\r\t{}/{} variants completed'.format(nlines, nlines), end = '')
 
 def process_chunk(df, model, scaler, output_dir, ncores, first):
@@ -56,16 +57,14 @@ def write_output_chunk(df, probs, output_dir, first):
         out_df.to_csv(out_file, mode = 'a', header = False, sep='\t', index=False)
 
 
-def validate_arguments(args):
-    for arg in vars(args):
-        print(arg,':\t', getattr(args, arg))
-
-    assert os.path.isfile(args.features)
-    assert os.path.isdir(args.model_dir)
-    assert os.path.isfile(os.path.join(args.model_dir, 'model.pkl'))
-    assert os.path.isfile(os.path.join(args.model_dir, 'scaler.pkl'))
-    assert os.path.isdir(args.output_dir)
-    assert os.access(args.output_dir, os.W_OK)
+def validate_arguments(model_dir, features, output_dir):
+    assert os.path.isfile(features), f"Input file {features} does not exist."
+    assert os.access(features, os.R_OK), f"Input file exists, but cannot be read due to permissions: {features}"
+    assert os.path.isdir(model_dir), f"Model dir {model_dir} does not exist."
+    assert os.path.isfile(os.path.join(model_dir, 'model.pkl')), f"Model file {os.path.join(model_dir, 'model.pkl')} does not exist."
+    assert os.path.isfile(os.path.join(model_dir, 'scaler.pkl')), f"Scaler file {os.path.join(model_dir, 'scaler.pkl')} does not exist."
+    assert os.path.isdir(output_dir), f"Output directory {output_dir} does not exist."
+    assert os.access(output_dir, os.W_OK), f"Output directory exists, but cannot be written to due to permissions: {output_dir}"
 
 def load_model(model_dir):
     with open(os.path.join(model_dir, 'model.pkl'), 'rb') as f:
