@@ -1,3 +1,28 @@
+"""
+extract_features.py
+
+This module provides functions for extracting features from MAF (Mutation Annotation Format) files, BAM files, and mappability data.
+It includes functionality for validating input arguments, extracting read features, calculating mappability, and performing binomial tests.
+
+Functions:
+    extract_features(maf, bams, mappability, output):
+        Extracts features from given MAF file, BAM files, and mappability data, and outputs the result to a specified file.
+
+    validate_arguments(input_file, bams, resources_dir, output):
+        Validates the input arguments for the feature extraction process.
+
+    binomtest_memo(k, n):
+        Performs a binomial test and returns the logarithm of the p-value, memoizing the results to avoid redundant calculations.
+
+    extract_read_features(df, cell_labels=None, subsample=False, data_dirs=False, filelist=False):
+        Extracts read features from a given DataFrame of variants.
+
+    run_mappability_by_chrm(df, map_dir):
+        Calculates mappability for each chromosome in the given DataFrame.
+
+    run_mappability(df, mappability):
+        Annotates a DataFrame with mappability scores by intersecting it with a mappability file using bedtools.
+"""
 
 import os
 import subprocess

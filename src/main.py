@@ -1,22 +1,35 @@
 """
-This file sets up the command line interface for various modules in the project.
+main.py
+
+This module serves as the commandline entry point for running various modes of the application,
+including feature extraction, classifier training, preprocessing, label generation, and classification.
+It sets up the computational environment, parses command-line arguments, 
+and dispatches tasks to the appropriate modules.
+
 Functions:
-- main(): Entry point of the script. Parses arguments, sets up the environment, and runs the appropriate module.
-- setup_module_arguments(parser): Configures the argument parser with subparsers for each mode.
-- run_module(args): Imports and runs the appropriate module based on the provided mode.
-- EF_add_parser_arguments(parser): Adds arguments for the 'extract_features' mode.
-- AC_add_parser_arguments(parser): Adds arguments for the 'apply_classifier' mode.
-- TC_add_parser_arguments(parser): Adds arguments for the 'train_classifier' mode.
-- TGL_add_parser_arguments(parser): Adds arguments for the 'train_genlabels' mode.
-- TPP_add_parser_arguments(parser): Adds arguments for the 'train_preprocessing' mode.
-Usage:
-    python main.py <mode> [options]
-Modes:
-    extract_features: Extracts features from input data.
-    train_classifier: Trains a classifier using the provided training data.
-    train_preprocessing: Preprocesses training data.
-    train_genlabels: Generates labels for training data.
-    apply_classifier: Applies a trained classifier to input data.
+    main():
+        The main function that sets up the argument parser, initializes the computational environment, and runs the specified module.
+
+    setup_module_arguments(parser):
+        Sets up the argument parser with subparsers for each mode of operation.
+
+    run_module(args):
+        Runs the specified module based on the parsed command-line arguments.
+
+    EF_add_parser_arguments(parser):
+        Adds command-line arguments for the 'extract_features' mode.
+
+    AC_add_parser_arguments(parser):
+        Adds command-line arguments for the 'classify' mode.
+
+    TC_add_parser_arguments(parser):
+        Adds command-line arguments for the 'train_classifier' mode.
+
+    TGL_add_parser_arguments(parser):
+        Adds command-line arguments for the 'train_genlabels' mode.
+
+    TPP_add_parser_arguments(parser):
+        Adds command-line arguments for the 'train_preprocessing' mode.
 """
 
 import argparse

@@ -1,3 +1,38 @@
+"""
+apply_classifier.py
+
+This module provides functions to classify data using a pre-trained machine learning model.
+It includes functionality for validating input arguments, loading models, scaling data, predicting probabilities, and writing output results.
+
+Functions:
+    classify(model_dir, features, output_dir, chunksize, ncores):
+        Classifies data using a pre-trained model and saves the results to the specified output directory.
+
+    process_chunk(df, model, scaler, output_dir, ncores, first):
+        Processes a chunk of data by classifying SNPs using the provided model and scaler.
+
+    scale_data(df, scaler):
+        Scales the feature columns of a DataFrame using the provided scaler.
+
+    write_output_chunk(df, probs, output_dir, first):
+        Writes a chunk of the output DataFrame to a TSV file.
+
+    validate_arguments(model_dir, features, output_dir):
+        Validates the input arguments for the classifier application.
+
+    load_model(model_dir):
+        Loads a machine learning model and its corresponding scaler from the specified directory.
+
+    predict(df, input_data, model, ncores):
+        Predicts the probabilities using the given model and input data.
+
+    predict_task(params):
+        Predicts the probability of the positive class for the given data using the provided model.
+
+    write_output(df, labels, probs, output_dir):
+        Writes the classification results to a TSV file.
+"""
+
 import pickle
 import pandas as pd # type: ignore
 import os
@@ -5,6 +40,23 @@ import numpy as np
 from multiprocessing import Pool
 
 def classify(model_dir, features, output_dir, chunksize, ncores):
+    """
+    Classifies data using a pre-trained model.
+    Parameters:
+    model_dir (str): Directory where the model and scaler are stored.
+    features (str): Path to the file containing features to classify.
+    output_dir (str): Directory where the classification results will be saved.
+    chunksize (int): Number of lines to read at a time from the features file.
+    ncores (int): Number of CPU cores to use for processing. If None, the number of physical cores will be used.
+    Returns:
+    None
+    This function performs the following steps:
+    1. Validates the input arguments.
+    2. Loads the model and scaler from the specified directory.
+    3. Reads the features file in chunks and classifies the data.
+    4. Saves the classification results to the specified output directory.
+    """
+
 
     validate_arguments(model_dir, features, output_dir)
     print("1. Loading model from: {}".format(model_dir))
@@ -25,6 +77,19 @@ def classify(model_dir, features, output_dir, chunksize, ncores):
     print('\r\t{}/{} variants completed'.format(nlines, nlines), end = '')
 
 def process_chunk(df, model, scaler, output_dir, ncores, first):
+    """
+    Processes a chunk of data by classifying SNPs using the provided model and scaler.
+    Parameters:
+    df (pandas.DataFrame): The input dataframe containing the data to be processed.
+    model: The classification model to be used for predicting probabilities.
+    scaler: The scaler object used to scale the input data.
+    output_dir (str): The directory where the output will be written.
+    ncores (int): The number of cores to be used for parallel processing.
+    first (bool): A flag indicating if this is the first chunk being processed.
+    Returns:
+    None
+    """
+
     orig_df = df
 
     ###
@@ -35,6 +100,15 @@ def process_chunk(df, model, scaler, output_dir, ncores, first):
     write_output_chunk(df, probs, output_dir, first)
 
 def scale_data(df, scaler):
+    """
+    Scales the feature columns of a DataFrame using the provided scaler.
+    Parameters:
+    df (pandas.DataFrame): The input DataFrame containing the data to be scaled.
+    scaler (object): The scaler object (e.g., from sklearn.preprocessing) used to scale the data.
+    Returns:
+    numpy.ndarray: The scaled data as a NumPy array.
+    """
+
     features = [c for c in df.columns if c.startswith('f_')]
     data = df[features].values
 
@@ -42,6 +116,19 @@ def scale_data(df, scaler):
     return scaled_data
 
 def write_output_chunk(df, probs, output_dir, first):
+    """
+    Writes a chunk of the output DataFrame to a TSV file.
+    Parameters:
+    df (pandas.DataFrame): The input DataFrame containing the data to be classified.
+    probs (array-like): The probabilities of each row being an artifact.
+    output_dir (str): The directory where the output file will be saved.
+    first (bool): A flag indicating whether this is the first chunk being written. 
+    If True, the file will be created with a header. 
+    If False, the data will be appended to the existing file without a header.
+    Returns:
+    None
+    """
+
     df['prob_artifact'] = probs
     df['result'] = df['prob_artifact'].apply(lambda x: 'PASS' if x < 0.5 else "ARTIFACT" if x >= 0.5 else "SKIP")
     df['result'] = df['result'].fillna('SKIP')
@@ -55,6 +142,21 @@ def write_output_chunk(df, probs, output_dir, first):
 
 
 def validate_arguments(model_dir, features, output_dir):
+    """
+    Validates the input arguments for the classifier application.
+    Parameters:
+    model_dir (str): Path to the directory containing the model and scaler files.
+    features (str): Path to the input features file.
+    output_dir (str): Path to the output directory.
+    Raises:
+    AssertionError: If any of the following conditions are not met:
+        - The features file exists and is readable.
+        - The model directory exists.
+        - The model file ('model.pkl') exists in the model directory.
+        - The scaler file ('scaler.pkl') exists in the model directory.
+        - The output directory exists and is writable.
+    """
+
     assert os.path.isfile(features), f"Input file {features} does not exist."
     assert os.access(features, os.R_OK), f"Input file exists, but cannot be read due to permissions: {features}"
     assert os.path.isdir(model_dir), f"Model dir {model_dir} does not exist."
@@ -64,6 +166,17 @@ def validate_arguments(model_dir, features, output_dir):
     assert os.access(output_dir, os.W_OK), f"Output directory exists, but cannot be written to due to permissions: {output_dir}"
 
 def load_model(model_dir):
+    """
+    Load a machine learning model and its corresponding scaler from the specified directory.
+    Parameters:
+    model_dir (str): The directory where the model and scaler files are stored.
+    Returns:
+    tuple: A tuple containing the loaded model and scaler objects.
+    Raises:
+    FileNotFoundError: If the model or scaler file does not exist in the specified directory.
+    pickle.UnpicklingError: If there is an error unpickling the model or scaler file.
+    """
+
     with open(os.path.join(model_dir, 'model.pkl'), 'rb') as f:
         model = pickle.load(f)
         #model.set_params(n_jobs = 10)
@@ -73,6 +186,17 @@ def load_model(model_dir):
     return model, scaler
 
 def predict(df, input_data, model, ncores):
+    """
+    Predicts the probabilities using the given model and input data.
+    Parameters:
+    df (pandas.DataFrame): The DataFrame containing the original features.
+    input_data (pandas.DataFrame): The DataFrame containing the scaled features.
+    model (object): The machine learning model used for prediction.
+    ncores (int): The number of cores to use for parallel processing.
+    Returns:
+    pandas.Series: A Series containing the predicted probabilities, indexed by the original DataFrame index.
+    """
+    
     scaled_features = ['{}_s'.format(c) for c in df.columns if c.startswith('f_')]
     df[scaled_features] = input_data
 
@@ -90,10 +214,31 @@ def predict(df, input_data, model, ncores):
     return pd.Series(data = probs, index = df.index)
 
 def predict_task(params):
+    """
+    Predicts the probability of the positive class for the given data using the provided model.
+    Args:
+        params (tuple): A tuple containing the model and the data to be predicted.
+            - model: The trained model with a `predict_proba` method.
+            - data: The input data for which the probabilities are to be predicted.
+    Returns:
+        numpy.ndarray: An array of probabilities for the positive class.
+    """
+
     model, data = params
     return model.predict_proba(data)[:, 0]
 
 def write_output(df, labels, probs, output_dir):
+    """
+    Writes the classification results to a TSV file.
+    Parameters:
+    df (pandas.DataFrame): DataFrame containing the data to be classified.
+    labels (list or numpy.array): List or array of classification labels.
+    probs (list or numpy.array): List or array of classification probabilities.
+    output_dir (str): Directory where the output file will be saved.
+    Returns:
+    None
+    """
+
     df['temp'] = labels
     df['result'] = df['temp'].apply(lambda x: 'PASS' if x == 1 else "ARTIFACT")
     df['prob'] = probs

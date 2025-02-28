@@ -1,3 +1,32 @@
+"""
+preprocessing.py
+
+This module provides functions for preprocessing variant and copy number data to compute cancer cell fractions (CCFs) for each variant in each clone.
+It includes functionality for validating input arguments, processing signal data, parsing copy number data, calculating variant counts, computing CCFs, and plotting results.
+
+Functions:
+    preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn):
+        Preprocesses variant and copy number data to compute CCFs for each variant in each clone.
+
+    validate_arguments(maf, bam_dirs, output_dir, signals_dir, cellclone_file, hscn_file):
+        Validates the input and output file paths and directories for the preprocessing step.
+
+    process_signals(df, signals_dir, output_dir, use_cached):
+        Processes signal data and generates a cell-to-clone map.
+
+    parse_copynumber(df, cellclone_file, hscn_file):
+        Parses copy number data and maps it to clones.
+
+    get_clone_var_counts(df, data_dirs, clonemap, clone_ids, fullbam=False):
+        Calculates variant and total read counts for each variant in each clone in the given DataFrame.
+
+    compute_ccfs(df, clone_ids):
+        Computes cancer cell fractions (CCFs) for given clone IDs and adds them to the DataFrame.
+
+    plot_ccfs(df, output, clone_ids):
+        Plots the cancer cell fractions (CCFs) for given clone IDs using pair plots.
+"""
+
 import os
 from os import path
 import argparse
@@ -11,12 +40,26 @@ import seaborn as sns # type: ignore
 from utils.utils_io import get_variants
 from utils.utils_bams import match_variants_to_filenames, get_sam, generate_reads
 
-
 def preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn):
+    """
+    Preprocesses variant and copy number data to compute cfs for each variant in each clone.
+    Parameters:
+    maf (str): Path to the MAF (Mutation Annotation Format) file containing variant information.
+    bam_dirs (list): List of directories containing BAM files for each sample.
+    signals_dir (str): Directory containing signal files for copy number analysis.
+    output_dir (str): Directory where the output files will be saved.
+    fullbam (bool): Flag indicating whether to use full BAM files.
+    cellclone_file (str): Path to the cell clone file.
+    hscn_file (str): Path to the HSCN (High-Resolution Copy Number) file.
+    use_cached_cn (bool): Flag indicating whether to use cached copy number data.
+    Raises:
+    RuntimeError: If neither signals_dir nor both cellclone_file and hscn_file are provided.
+    Returns:
+    None
+    """
     
     validate_arguments(maf, bam_dirs, output_dir, signals_dir, cellclone_file, hscn_file)
 
-    
     print("1. Reading variants from: {}".format(maf))
     df = get_variants(maf)
 
@@ -45,6 +88,21 @@ def preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_fil
 
 
 def validate_arguments(maf, bam_dirs, output_dir, signals_dir, cellclone_file, hscn_file):
+    """
+    Validates the input and output file paths and directories for the preprocessing step.
+    Parameters:
+    maf (str): Path to the input MAF file.
+    bam_dirs (list of str): List of paths to the input BAM files.
+    output_dir (str): Path to the output directory.
+    signals_dir (str, optional): Path to the signals directory.
+    cellclone_file (str, optional): Path to the cell to clone mapping file.
+    hscn_file (str, optional): Path to the signals HSCN file.
+    Raises:
+    AssertionError: If any of the input files do not exist or cannot be read.
+    AssertionError: If the output directory does not exist or cannot be written to.
+    AssertionError: If the signals directory, cell to clone mapping file, or signals HSCN file do not exist or cannot be read.
+    """
+
     # Checks if input files exist and if output files are in directories that exist and can be written to
     assert os.path.isfile(args.maf), f"Input file {maf} does not exist."
     assert os.access(args.maf, os.R_OK), (
@@ -82,6 +140,17 @@ def validate_arguments(maf, bam_dirs, output_dir, signals_dir, cellclone_file, h
 
 
 def process_signals(df, signals_dir, output_dir, use_cached):
+    """
+    Processes signal data and generates a cell-to-clone map.
+    Parameters:
+    df (pandas.DataFrame): The dataframe containing the signal data.
+    signals_dir (str): The directory where the signal files are located.
+    output_dir (str): The directory where the output files will be saved.
+    use_cached (bool): If True, use the cached cell-to-clone map if it exists.
+    Returns:
+    tuple: A tuple containing the path to the cell-to-clone map file and the path to the signals CNS file.
+    """
+
 
     signals_result = path.join(signals_dir, 'signals.Rdata')
     signals_cns = path.join(signals_dir, 'hscn.csv.gz')
@@ -98,6 +167,18 @@ def process_signals(df, signals_dir, output_dir, use_cached):
 
 
 def parse_copynumber(df, cellclone_file, hscn_file):
+    """
+    Parses copy number data and maps it to clones.
+    Parameters:
+    df (pd.DataFrame): DataFrame containing the data to be processed.
+    cellclone_file (str): Path to the file containing cell to clone mapping.
+    hscn_file (str): Path to the file containing copy number data.
+    Returns:
+    pd.DataFrame: Updated DataFrame with copy number columns added.
+    pd.DataFrame: DataFrame containing the cell to clone mapping.
+    list: List of unique clone IDs.
+    """
+
 
     clonemap = pd.read_table(cellclone_file, index_col=0)
     clone_ids = sorted(clonemap['clone_id'].unique())
@@ -142,6 +223,19 @@ def parse_copynumber(df, cellclone_file, hscn_file):
     return df, clonemap, clone_ids
 
 def get_clone_var_counts(df, data_dirs, clonemap, clone_ids, fullbam=False):
+    """
+    Calculate variant and total read counts for each variant in each clone in the given DataFrame.
+
+    Parameters:
+    df (pandas.DataFrame): DataFrame containing variant information.
+    data_dirs (list of str): List of directories containing SAM/BAM files.
+    clonemap (pandas.DataFrame): DataFrame mapping cell barcodes to clone IDs.
+    clone_ids (list of str): List of clone IDs to be considered.
+    fullbam (bool, optional): If True, use the first directory in data_dirs for all filenames. Defaults to False.
+
+    Returns:
+    pandas.DataFrame: DataFrame with variant and total read counts for each clone.
+    """
 
     def get_clone_list(reads):
         #cells = ['_'.join(read.split('_')[1:-2]) for read in reads]
@@ -192,6 +286,20 @@ def get_clone_var_counts(df, data_dirs, clonemap, clone_ids, fullbam=False):
     return df
 
 def compute_ccfs(df, clone_ids):
+    """
+    Compute cancer cell fractions (CCFs) for given clone IDs and add them to the DataFrame.
+    Parameters:
+    df (pandas.DataFrame): The input DataFrame containing the necessary columns for computation.
+    clone_ids (list): A list of clone IDs for which CCFs need to be computed.
+    Returns:
+    pandas.DataFrame: The DataFrame with added CCF columns for each clone ID.
+    The function expects the DataFrame to have the following columns for each clone ID:
+    - 'var_<clone_id>': Variant allele frequency for the clone.
+    - 'cn_<clone_id>': Copy number for the clone.
+    - 'tot_<clone_id>': Total copy number for the clone.
+    The computed CCF for each clone ID will be added to the DataFrame as 'ccf_<clone_id>'.
+    """
+
     for clone in clone_ids:
         ccf = 'ccf_{}'.format(clone)
         var = 'var_{}'.format(clone)
@@ -203,6 +311,16 @@ def compute_ccfs(df, clone_ids):
     return df
 
 def plot_ccfs(df, output, clone_ids):
+    """
+    Plots the cancer cell fractions (CCFs) for given clone IDs using pair plots.
+    Parameters:
+    df (pandas.DataFrame): DataFrame containing the CCF data for different clones.
+    output (str): The file path where the plot image will be saved.
+    clone_ids (list): List of clone IDs to be plotted.
+    Returns:
+    None
+    """
+
     sns.set_context('paper', font_scale=1.5)
     df_plot = pd.DataFrame()
     for c in clone_ids:

@@ -1,14 +1,50 @@
+"""
+utils_bams.py
+
+This module provides utility functions for working with BAM files and genomic variants.
+It includes functionality for matching variants to BAM filenames, determining if reads are from high-quality normal cells,
+opening SAM/BAM files, and generating reads at specific positions.
+
+Functions:
+    match_variants_to_filenames(df, data_dirs):
+        Matches genomic variants to BAM filenames based on their chromosomal location.
+
+    is_normal(pileupread, labels=None):
+        Determines if a given pileup read is from a high-quality normal cell.
+
+    get_sam_path(path):
+        Opens a SAM/BAM file using pysam and returns the AlignmentFile object.
+
+    get_sam(data_dir, filename):
+        Opens a SAM/BAM file using pysam.AlignmentFile.
+
+    generate_reads(samfile, x, labels=None, min_base_quality=20, min_mapping_quality=0):
+        Generates reads at a specified position and reports whether they match the variant allele or not.
+"""
+
 import functools
 import os
-import pysam
+import pysam # type: ignore
 
 
 def match_variants_to_filenames(df, data_dirs):
-    # Could be shared with extract features?
     """
-    Bam files are assumed to be merged and in region format. Thus, for each variant
-    we match it to the appropriate file that contains that locus
+    Matches genomic variants to BAM filenames based on their chromosomal location.
+    This function assumes that BAM files are merged and in region format. For each variant
+    in the provided DataFrame, it matches the variant to the appropriate BAM file that 
+    contains the corresponding locus.
+    Parameters:
+    df (pandas.DataFrame): A DataFrame containing genomic variants with columns 'chrm' (chromosome) 
+                        and 'pos' (position).
+    data_dirs (list): A list of directories where BAM files are stored. Only the first directory 
+                    in the list is used.
+    Returns:
+    pandas.DataFrame: The input DataFrame with an additional column 'filename' that contains the 
+                    matched BAM filename for each variant. If no matching file is found, the 
+                    filename will be None.
+    TODO: I don't think this is used anymore since switching to merged bams but I should check
     """
+
     def get_region(f):
         v = f.strip().split('.')[0].split('_')[-1].split('-')
         return (v[0], int(v[1]), int(v[2]))
@@ -29,6 +65,18 @@ def match_variants_to_filenames(df, data_dirs):
     return df
 
 def is_normal(pileupread, labels=None):
+    """
+    Determines if a given pileup read is from a high-quality normal cell.
+    Args:
+        pileupread (pysam.PileupRead): The pileup read to be evaluated.
+        labels (pandas.DataFrame, optional): A DataFrame containing cell labels with 
+                                            'is_high_quality_normal_cell' column. 
+                                            Defaults to None.
+    Returns:
+        bool: True if the cell is a high-quality normal cell, False otherwise.
+        None: If labels are not provided.
+    """
+
     if labels is None: return None
 
     RG = pileupread.alignment.get_tag('RG')
@@ -41,18 +89,35 @@ def is_normal(pileupread, labels=None):
 
 @functools.lru_cache
 def get_sam_path(path):
+    """
+    Opens a SAM/BAM file using pysam and returns the AlignmentFile object.
+    Args:
+        path (str): The file path to the SAM/BAM file.
+    Returns:
+        pysam.AlignmentFile: An object representing the opened SAM/BAM file.
+    TODO: I should check if get sam or get sam path is currently used and clean up other
+    """
+
     pysam.set_verbosity(0)
-    ## TODO This is not a great way to handle things. Should probably switch to taking as input a metadata file which
-    ## maps regions to filenames and all that logic can be handled externally in a (potentially) sample specific way
     return pysam.AlignmentFile(path, "rb")
-
-
 
 @functools.lru_cache # memoizes
 def get_sam(data_dir, filename):
+    """
+    Opens a SAM/BAM file using pysam.AlignmentFile.
+    This function attempts to open a SAM/BAM file with the given filename in the specified directory.
+    If the file is not found, it searches for a file with a suffix appended to the filename and tries to open it.
+    Args:
+        data_dir (str): The directory where the SAM/BAM file is located.
+        filename (str): The name of the SAM/BAM file to open.
+    Returns:
+        pysam.AlignmentFile: An object representing the opened SAM/BAM file.
+    Raises:
+        FileNotFoundError: If the file is not found in the specified directory.
+        ValueError: If no file with the expected suffix is found in the directory.
+    """
+
     pysam.set_verbosity(0)
-    ## TODO This is not a great way to handle things. Should probably switch to taking as input a metadata file which
-    ## maps regions to filenames and all that logic can be handled externally in a (potentially) sample specific way
     try:
         return pysam.AlignmentFile(os.path.join(data_dir, filename), "rb")
     except:
@@ -61,13 +126,33 @@ def get_sam(data_dir, filename):
 
 def generate_reads(samfile, x, labels=None, min_base_quality=20, min_mapping_quality=0):
     """
-    Gets the reads at a position and reports whether they match the variant allele or not.
-
-    Note: only reports reads with given alt or ref alleles and skips other alternate alleles
+    Generates reads at a specified position and reports whether they match the variant allele or not.
+    Parameters:
+    samfile (pysam.AlignmentFile): The SAM/BAM file to read from.
+    x (dict): A dictionary containing the following keys:
+        - 'chrm' (str): Chromosome name.
+        - 'pos' (int): 1-based position of the variant.
+        - 'ref_allele' (str): Reference allele.
+        - 'alt_allele' (str): Alternate allele.
+        - 'var_type' (str): Variant type ('SNP', 'DNP', 'DEL', 'INS').
+    labels (dict, optional): A dictionary of labels for normal reads. Defaults to None.
+    min_base_quality (int, optional): Minimum base quality for a read to be considered. Defaults to 20.
+    min_mapping_quality (int, optional): Minimum mapping quality for a read to be considered. Defaults to 0.
+    Yields:
+    tuple: A tuple containing:
+        - pileupread (pysam.PileupRead): The read from the pileup.
+        - bool: True if the read matches the alternate allele, False otherwise.
+        - bool: True if the read is normal according to the labels, False otherwise.
+    Note:
+    - Only reports reads with given alt or ref alleles and skips other alternate alleles.
+    - There is processing for DEL, INS, and DNPs, but the code is not currently used. Realignment in mutect2
+        affects these a lot more, so typically there are very few actual supporting reads. This would be good
+        to revisit in the future
+    - It'd be nice to speed this step up, perhaps switching a portion of extract_features to directly use CLI 
+        samtools. But I haven't been able to get that to work in a straightforward way. Future extension?
     """
 
     chrm, pos, ref, alt, var_type = x['chrm'], x['pos'], x['ref_allele'], x['alt_allele'], x['var_type']
-
 
     for pileupcolumn in samfile.pileup(chrm, pos-1, pos+1,
             min_base_quality=min_base_quality,
@@ -75,7 +160,7 @@ def generate_reads(samfile, x, labels=None, min_base_quality=20, min_mapping_qua
             ignore_orphans=False):
 
         # Pysam zero-indexes, hence pos-1. It also reports deletions at the reference base before the start
-        # of the deletion, while maf reports them at the first deleted base. Hence pos-2
+        # of the deletion, while maf reports them at the first deleted base. Hence pos-2. Need to check what VCF does
         if var_type == 'DEL' and pileupcolumn.pos != pos-2: continue
         elif var_type != 'DEL' and pileupcolumn.pos != pos-1: continue
 
