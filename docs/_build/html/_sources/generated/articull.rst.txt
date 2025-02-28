@@ -1,0 +1,6 @@
+﻿articull
+========
+
+.. automodule:: articull
+
+   
