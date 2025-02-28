@@ -4,13 +4,13 @@ import subprocess
 import tempfile
 import numpy
 import random
-
-import pandas as pd
+from scipy.stats import binomtest # type:ignore
+import pandas as pd # type:ignore
 pd.options.mode.chained_assignment = None #Suppress SettingWithACopy Warning
 
-from utils_io import get_variants, update_progress
-from utils_bams import match_variants_to_filenames,  generate_reads,  get_sam, get_sam_path
-from scipy.stats import binomtest
+from utils.utils_io import get_variants, update_progress
+from utils.utils_bams import match_variants_to_filenames,  generate_reads,  get_sam, get_sam_path
+
 import math
 
 def extract_features(maf, bams, mappability, output):

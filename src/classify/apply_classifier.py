@@ -1,7 +1,5 @@
-import argparse
 import pickle
-import pandas as pd
-import sys
+import pandas as pd # type: ignore
 import os
 import numpy as np
 from multiprocessing import Pool
