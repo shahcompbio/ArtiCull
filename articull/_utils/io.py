@@ -1,8 +1,5 @@
 """
-utils_io.py
-
 This module provides utility functions for reading and processing variant data from MAF and VCF files.
-It includes functionality for extracting variant information and reading VCF files.
 
 Functions:
     get_variants(filename, file_type="maf"):

@@ -1,8 +1,5 @@
 """
-generate_labels.py
-
-This module provides functions to generate labels for input data and save the results to a specified output directory.
-It includes functionality for validating input arguments, processing data frames, applying assignment functions, and creating plots.
+This module provides functions to generate variant labels. 
 
 Functions:
     generate_labels(input_file, output_dir, clone1, clone2, alpha):

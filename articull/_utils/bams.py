@@ -1,6 +1,4 @@
 """
-utils_bams.py
-
 This module provides utility functions for working with BAM files and genomic variants.
 It includes functionality for matching variants to BAM filenames, determining if reads are from high-quality normal cells,
 opening SAM/BAM files, and generating reads at specific positions.

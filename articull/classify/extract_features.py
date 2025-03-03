@@ -1,8 +1,6 @@
 """
-Extract Features
-
 This module provides functions for extracting features from MAF (Mutation Annotation Format) or 
-VCF (Variant Calling Format) files, BAM files, and mappability data.
+VCF (Variant Calling Format) files.
 
 Functions:
     extract_features(maf: str, bams: str, mappability: str, output: str) -> None:
@@ -18,8 +16,8 @@ from scipy.stats import binomtest # type:ignore
 import pandas as pd # type:ignore
 pd.options.mode.chained_assignment = None #Suppress SettingWithACopy Warning
 
-from ..utils.utils_io import get_variants
-from ..utils.utils_bams import match_variants_to_filenames,  generate_reads,  get_sam, get_sam_path
+from .._utils.io import get_variants
+from .._utils.bams import match_variants_to_filenames,  generate_reads,  get_sam, get_sam_path
 
 import math
 

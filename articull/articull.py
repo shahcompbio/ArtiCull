@@ -1,10 +1,8 @@
 """
-main.py
-
-This module serves as the commandline entry point for running various modes of the application,
-including feature extraction, classifier training, preprocessing, label generation, and classification.
-It sets up the computational environment, parses command-line arguments, 
-and dispatches tasks to the appropriate modules.
+This module is the commandline entry point for running various modes of the application. 
+It sets up the computational environment, parses command-line arguments, and dispatches tasks to the specified module.
+For instructions on using the command-line interface, run `python articull/articull.py -h`, or see
+instructions in :doc:`usage`
 
 Functions:
     main():
@@ -13,9 +11,9 @@ Functions:
 
 import argparse
 import os
-from .utils.utils_setup import setup_ncores, setup_pandarallel
+from ._utils.setup import setup_ncores, setup_pandarallel
 
-def main():
+def articull():
     """
     The main function that sets up the argument parser, initializes the computational environment, and runs the specified module.
 
@@ -26,12 +24,12 @@ def main():
         None
     """
     parser = argparse.ArgumentParser()
-    args = setup_module_arguments(parser)
+    args = _setup_module_arguments(parser)
     setup_ncores(args.cores)
     setup_pandarallel(args.mode, args.cores)
-    run_module(args)
+    _run_module(args)
 
-def setup_module_arguments(parser):
+def _setup_module_arguments(parser):
     """
     Sets up the argument parser with subparsers for each mode of operation.
 
@@ -42,11 +40,11 @@ def setup_module_arguments(parser):
         argparse.Namespace: The parsed command-line arguments.
     """
     modes_parser_setup = {
-            "extract_features" : EF_add_parser_arguments,
-            "train_classifier" : TC_add_parser_arguments,
-            "train_preprocessing" : TPP_add_parser_arguments,
-            "train_genlabels" : TGL_add_parser_arguments,
-            "classify" : AC_add_parser_arguments
+            "extract_features" : _EF_add_parser_arguments,
+            "train_classifier" : _TC_add_parser_arguments,
+            "train_preprocessing" : _TPP_add_parser_arguments,
+            "train_genlabels" : _TGL_add_parser_arguments,
+            "classify" : _AC_add_parser_arguments
             }
 
     subparsers = parser.add_subparsers(dest = 'mode', required = True, \
@@ -59,7 +57,7 @@ def setup_module_arguments(parser):
     args = parser.parse_args()
     return args
 
-def run_module(args):
+def _run_module(args):
     """
     Runs the specified module based on the parsed command-line arguments.
 
@@ -100,14 +98,14 @@ def run_module(args):
         generate_labels.generate_labels(input_file, output_dir, clone1, clone2, alpha)
 
     elif mode == 'classify':
-        from classify import apply_classifier
+        from articull.classify import classify
         model_dir, features, output_dir, chunksize, ncores= args.model_dir, args.features, args.output_dir, args.chunksize, args.cores
-        apply_classifier.classify(model_dir, features, output_dir, chunksize, ncores)
+        classify.classify_variants(model_dir, features, output_dir, chunksize, ncores)
 
-    else: 
-        raise KeyError('Invalid mode provided: {} \nMode must be one of {}'.format(mode, str(modes_parser_setup.keys())))
+    #else: 
+    #    raise KeyError('Invalid mode provided: {} \nMode must be one of {}'.format(mode, str(modes_parser_setup.keys())))
 
-def EF_add_parser_arguments(parser):
+def _EF_add_parser_arguments(parser):
     """
     Adds command-line arguments for the 'extract_features' mode.
 
@@ -128,7 +126,7 @@ def EF_add_parser_arguments(parser):
     default_resources_path = os.path.join(repo_root, 'resources')
     parser.add_argument('--resources_dir', type=str, default=default_resources_path, help='<Optional> Path to directory containing folder of mappability tracks (default: {}'.format(default_resources_path))
 
-def AC_add_parser_arguments(parser):
+def _AC_add_parser_arguments(parser):
     """
     Adds command-line arguments for the 'classify' mode.
 
@@ -148,7 +146,7 @@ def AC_add_parser_arguments(parser):
     parser.add_argument('--chunksize', type = int, default = DEFAULT_CHUNKSIZE, required = False,
                         help = F'<Optional> Number of rows per worker (default {DEFAULT_CHUNKSIZE})')
 
-def TC_add_parser_arguments(parser):
+def _TC_add_parser_arguments(parser):
     """
     Adds command-line arguments for the 'train_classifier' mode.
 
@@ -165,7 +163,7 @@ def TC_add_parser_arguments(parser):
     parser.add_argument('--cores', '-j', default = None, type = int, \
             help = 'Number of workers to use for parallelization. <Default> the number of available cores')
 
-def TGL_add_parser_arguments(parser):
+def _TGL_add_parser_arguments(parser):
     """
     Adds command-line arguments for the 'train_genlabels' mode.
 
@@ -183,7 +181,7 @@ def TGL_add_parser_arguments(parser):
     parser.add_argument('--cores', '-j', default = None, type = int, \
             help = 'Number of workers to use for parallelization. <Default> the number of available cores')
 
-def TPP_add_parser_arguments(parser):
+def _TPP_add_parser_arguments(parser):
     """
     Adds command-line arguments for the 'train_preprocessing' mode.
 
@@ -205,4 +203,4 @@ def TPP_add_parser_arguments(parser):
             help = 'Number of workers to use for parallelization. <Default> the number of available cores')
 
 if __name__ == '__main__':
-    main()
+    articull()

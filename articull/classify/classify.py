@@ -1,8 +1,5 @@
 """
-apply_classifier.py
-
-This module provides functions to classify data using a pre-trained machine learning model.
-It includes functionality for validating input arguments, loading models, scaling data, predicting probabilities, and writing output results.
+This module runs a pre-trained ArtiCull model to classify variants as artifacts or true mutations.
 
 Functions:
     classify(model_dir, features, output_dir, chunksize, ncores):
@@ -15,7 +12,7 @@ import os
 import numpy as np
 from multiprocessing import Pool
 
-def classify(model_dir, features, output_dir, chunksize, ncores):
+def classify_variants(model_dir, features, output_dir, chunksize, ncores):
     """
     Classifies data using a pre-trained model.
 

@@ -1,8 +1,8 @@
 """
-preprocessing.py
-
-This module provides functions for preprocessing variant and copy number data to compute cancer cell fractions (CCFs) for each variant in each clone.
-It includes functionality for validating input arguments, processing signal data, parsing copy number data, calculating variant counts, computing CCFs, and plotting results.
+This module provides functions for preprocessing variant and copy number data to 
+compute cancer cell fractions (CCFs) for each variant in each clone.
+It includes functionality for validating input arguments, processing signal data, 
+parsing copy number data, calculating variant counts, computing CCFs, and plotting results.
 
 Functions:
     preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn):
@@ -18,8 +18,8 @@ import subprocess
 from matplotlib import pyplot # type: ignore
 import seaborn as sns # type: ignore
 
-from ..utils.utils_io import get_variants
-from ..utils.utils_bams import match_variants_to_filenames, get_sam, generate_reads
+from .._utils.io import get_variants
+from .._utils.bams import match_variants_to_filenames, get_sam, generate_reads
 
 def preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn):
     """

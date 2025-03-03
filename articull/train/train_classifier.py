@@ -1,8 +1,5 @@
 """
-train_classifier.py
-
-This module provides functions to train, test, and save machine learning classifiers using various models.
-It includes functionality for reading input data, scaling data, training models, testing models, and saving the trained models and scalers.
+This module provides functions to train a new ArtiCull model.
 
 Functions:
     train_classifier(filelist, model_type, no_label_prop, output_dir):

@@ -1,9 +1,7 @@
 """
-utils_setup.py
-
 This module provides utility functions for setting up the computational environment.
-It includes functionality for setting the number of cores for OpenBLAS and MKL libraries,
-and initializing the pandarallel library for parallel processing with pandas.
+It includes functionality for setting the number of cores and initializing the pandarallel 
+library for parallel processing with pandas.
 
 Functions:
     setup_ncores(ncores=None):
