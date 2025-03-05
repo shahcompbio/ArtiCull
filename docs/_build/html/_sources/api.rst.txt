@@ -1,7 +1,17 @@
-API
-===
+API Reference
+=============
 
-.. autosummary::
-   :toctree: generated
+.. automodule:: articull
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   articull
+.. automodule:: articull.classify
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. automodule:: articull.train
+    :members:
+    :undoc-members:
+    :show-inheritance:

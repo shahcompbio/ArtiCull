@@ -32,6 +32,6 @@ Module contents
 ---------------
 
 .. automodule:: articull.train
-   :members:
-   :show-inheritance:
-   :undoc-members:
+    :members:
+    :show-inheritance:
+    :undoc-members:

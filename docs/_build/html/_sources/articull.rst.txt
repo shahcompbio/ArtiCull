@@ -9,15 +9,14 @@ Subpackages
 
    articull.classify
    articull.train
-   articull.utils
 
 Submodules
 ----------
 
-articull.main module
---------------------
+articull.articull module
+------------------------
 
-.. automodule:: articull.main
+.. automodule:: articull.articull
    :members:
    :show-inheritance:
    :undoc-members:

@@ -19,8 +19,16 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'sphinx.ext.intersphinx',
 ]
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3/', None),
+    'sphinx': ('https://www.sphinx-doc.org/en/master/', None),
+}
+intersphinx_disabled_domains = ['std']
+
 #autoapi_dirs = ['../articull']
 autoapi_type = "python"
 autoapi_ignore = ['../articull/__init__.py', '../articull/misc/process_signals.py']
@@ -34,8 +42,19 @@ autodoc_mock_imports = ["flask", "mongoengine"]
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 
-html_theme = 'alabaster'
-#html_theme_options = {
-#    'collapse_navigation': False,
-#}
+# -- Options for HTML output
+
+html_theme = 'sphinx_rtd_theme'
+
+# These folders are copied to the documentation's HTML output
 html_static_path = ['_static']
+
+# These paths are either relative to html_static_path
+# or fully qualified paths (eg. https://...)
+html_css_files = [
+    'css/custom.css',
+]
+
+# -- Options for EPUB output
+epub_show_urls = 'footnote'
+
