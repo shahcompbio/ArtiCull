@@ -40,7 +40,7 @@ If you have already done this previously, ensure that the `articull-env`` enviro
     bam=example/example.bam
     resources_dir=resources/  # update if you saved to a different location during setup
 
-    python articull/articull.py extract_features $maf $extract_features_output $bam --resources_dir $resources_dir --cores 8 
+    python -m articull extract_features $maf $extract_features_output $bam --resources_dir $resources_dir --cores 1 
 
 2. Run classification
 ^^^^^^^^^^^^^^^^^^^^^
@@ -51,7 +51,7 @@ If you have already done this previously, ensure that the `articull-env`` enviro
     output_dir=example/
     model_dir=models/preprint_model/
 
-    python articull/articull.py classify $extract_features_output $output_dir $model_dir
+    python -m articull classify $extract_features_output $output_dir $model_dir --cores 1
 
 Output
 ------

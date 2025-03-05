@@ -16,8 +16,8 @@ from scipy.stats import binomtest # type:ignore
 import pandas as pd # type:ignore
 pd.options.mode.chained_assignment = None #Suppress SettingWithACopy Warning
 
-from .._utils.io import get_variants
-from .._utils.bams import match_variants_to_filenames,  generate_reads,  get_sam, get_sam_path
+from articull._utils.io import get_variants
+from articull._utils.bams import match_variants_to_filenames,  generate_reads,  get_sam, get_sam_path
 
 import math
 

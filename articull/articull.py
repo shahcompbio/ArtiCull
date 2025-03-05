@@ -11,7 +11,7 @@ Functions:
 
 import argparse
 import os
-from ._utils.setup import setup_ncores, setup_pandarallel
+from articull._utils.setup import setup_ncores, setup_pandarallel
 
 def articull():
     """
@@ -77,23 +77,23 @@ def _run_module(args):
     mode = args.mode
     print('Running mode: {}'.format(mode))
     if mode == 'extract_features':
-        from classify import extract_features 
+        from articull.classify import extract_features 
         maf, bams, mappability, output = args.input_file, args.bams, args.resources_dir, args.output
         extract_features.extract_features(maf, bams, mappability, output)
 
     elif mode == 'train_classifier':
-        from train import train_classifier 
+        from articull.train import train_classifier 
         filelist, model_type, no_label_prop, output_dir = args.file_list, args.model, args.no_label_prop, args.output_dir
         train_classifier.train_classifier(filelist, model_type, no_label_prop, output_dir)
 
     elif mode == 'train_preprocessing':
-        from train import preprocessing
+        from articull.train import preprocessing
         maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn = \
         args.maf, args.bam_dirs, args.signals_dir, args.output_dir, args.fullbam, args.cell_clones, args.hscn, args.use_cached_cn
         preprocessing.preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn)
 
     elif mode == 'train_genlabels':
-        from train import generate_labels
+        from articull.train import generate_labels
         input_file, output_dir, clone1, clone2, alpha = args.input_file, args.output_dir, args.clone1, args.clone2, args.alpha
         generate_labels.generate_labels(input_file, output_dir, clone1, clone2, alpha)
 

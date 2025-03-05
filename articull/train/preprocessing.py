@@ -18,8 +18,8 @@ import subprocess
 from matplotlib import pyplot # type: ignore
 import seaborn as sns # type: ignore
 
-from .._utils.io import get_variants
-from .._utils.bams import match_variants_to_filenames, get_sam, generate_reads
+from articull._utils.io import get_variants
+from articull._utils.bams import match_variants_to_filenames, get_sam, generate_reads
 
 def preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn):
     """

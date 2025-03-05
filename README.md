@@ -73,7 +73,7 @@ extract_features_output=example/articull.features.tsv
 bam=example/example.bam
 resources_dir=resources/  # update if you saved to a different location during setup
 
-python src/main.py extract_features $maf $extract_features_output $bam --resources_dir $resources_dir --cores 8 
+python -m articull extract_features $maf $extract_features_output $bam --resources_dir $resources_dir --cores 8 
 ```
 
 ### 2. Run classification
@@ -83,7 +83,7 @@ extract_features_output=example/articull.features.tsv
 output_dir=example/
 model_dir=models/preprint_model/
 
-python src/main.py classify $extract_features_output $output_dir $model_dir
+python -m articull classify $extract_features_output $output_dir $model_dir
 ```
 
 ### Output

@@ -20,7 +20,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Usage" href="usage.html" />
+    <link rel="next" title="Command-line Usage" href="usage.html" />
     <link rel="prev" title="Installation" href="installation.html" /> 
 </head>
 
@@ -60,8 +60,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Command-line Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 </ul>
 
@@ -122,7 +121,7 @@ bash<span class="w"> </span>scripts/setup_mappability_track.bash<span class="w">
 <span class="nv">bam</span><span class="o">=</span>example/example.bam
 <span class="nv">resources_dir</span><span class="o">=</span>resources/<span class="w">  </span><span class="c1"># update if you saved to a different location during setup</span>
 
-python<span class="w"> </span>articull/articull.py<span class="w"> </span>extract_features<span class="w"> </span><span class="nv">$maf</span><span class="w"> </span><span class="nv">$extract_features_output</span><span class="w"> </span><span class="nv">$bam</span><span class="w"> </span>--resources_dir<span class="w"> </span><span class="nv">$resources_dir</span><span class="w"> </span>--cores<span class="w"> </span><span class="m">8</span>
+python<span class="w"> </span>-m<span class="w"> </span>articull<span class="w"> </span>extract_features<span class="w"> </span><span class="nv">$maf</span><span class="w"> </span><span class="nv">$extract_features_output</span><span class="w"> </span><span class="nv">$bam</span><span class="w"> </span>--resources_dir<span class="w"> </span><span class="nv">$resources_dir</span><span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 </section>
@@ -132,7 +131,7 @@ python<span class="w"> </span>articull/articull.py<span class="w"> </span>extrac
 <span class="nv">output_dir</span><span class="o">=</span>example/
 <span class="nv">model_dir</span><span class="o">=</span>models/preprint_model/
 
-python<span class="w"> </span>articull/articull.py<span class="w"> </span>classify<span class="w"> </span><span class="nv">$extract_features_output</span><span class="w"> </span><span class="nv">$output_dir</span><span class="w"> </span><span class="nv">$model_dir</span>
+python<span class="w"> </span>-m<span class="w"> </span>articull<span class="w"> </span>classify<span class="w"> </span><span class="nv">$extract_features_output</span><span class="w"> </span><span class="nv">$output_dir</span><span class="w"> </span><span class="nv">$model_dir</span><span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
 </section>
@@ -218,7 +217,7 @@ python<span class="w"> </span>articull/articull.py<span class="w"> </span>classi
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="usage.html" class="btn btn-neutral float-right" title="Usage" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="usage.html" class="btn btn-neutral float-right" title="Command-line Usage" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
