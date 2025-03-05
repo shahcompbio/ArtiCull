@@ -1,6 +1,6 @@
  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![ArtiCull Logo](docs/logo.png)
+<img src="docs/logo.png" width="300">
 
 # ArtiCull: Variant Call Refinement for scWGS
 
