@@ -1,0 +1,17 @@
+API Reference
+=============
+
+.. automodule:: articull
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. automodule:: articull.classify
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. automodule:: articull.train
+    :members:
+    :undoc-members:
+    :show-inheritance:

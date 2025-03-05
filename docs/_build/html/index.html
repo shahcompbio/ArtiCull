@@ -1,0 +1,165 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ArtiCull: Variant Call Refinement for scWGS &mdash; articull 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            articull
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Example Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Command-line Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">articull</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">ArtiCull: Variant Call Refinement for scWGS</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <a class="reference internal image-reference" href="_images/logo.png"><img alt="ArtiCull logo" class="align-left" src="_images/logo.png" style="width: 230px;" />
+</a>
+<br style="clear: both;"><section id="articull-variant-call-refinement-for-scwgs">
+<h1>ArtiCull: Variant Call Refinement for scWGS<a class="headerlink" href="#articull-variant-call-refinement-for-scwgs" title="Link to this heading"></a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p><strong>ArtiCull</strong> (<cite>Arti</cite>fact <cite>Cull</cite>er) is a variant call refinement algorithm for single-cell
+whole-genome sequencing (scWGS) data. It enables single nucleotide variant (SNV) based analyses in scWGS,
+including mutational signature and evolutionary analyses.</p>
+</section>
+<section id="citation">
+<h2>Citation<a class="headerlink" href="#citation" title="Link to this heading"></a></h2>
+<p>If you use ArtiCull in your research, please cite:</p>
+<blockquote>
+<div><p>Satas, G., Myers, M. A., McPherson, A., &amp; Shah, S. P. (2025). Inferring active mutational processes in cancer using single cell sequencing and evolutionary constraints. bioRxiv. doi:10.1101/2025.02.24.639589</p>
+</div></blockquote>
+</section>
+<section id="support">
+<h2>Support<a class="headerlink" href="#support" title="Link to this heading"></a></h2>
+<p>If you encounter any issues, please open an issue on the <a class="reference external" href="https://github.com/shahcompbio/articull/issues">ArtiCull GitHub</a></p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#cloning-the-repository">Cloning the Repository</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#setting-up-the-conda-environment">Setting up the Conda Environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#downloading-reference-data-tracks">Downloading Reference Data Tracks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Example Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="example.html#example-files">Example Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="example.html#instructions">Instructions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="example.html#output">Output</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Command-line Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#arguments">Arguments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="articull.html">articull package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="articull.classify.html">articull.classify package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="articull.train.html">articull.train package</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p>ArtiCull is released under the MIT license.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For more information about the MIT license, you can visit the following link:
+<a class="reference external" href="https://opensource.org/licenses/MIT">https://opensource.org/licenses/MIT</a></p>
+</div>
+<a class="reference external image-reference" href="https://opensource.org/licenses/MIT"><img alt="https://img.shields.io/badge/License-MIT-yellow.svg" src="https://img.shields.io/badge/License-MIT-yellow.svg" />
+</a>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Gryte Satas.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
