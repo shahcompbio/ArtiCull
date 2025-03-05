@@ -18,6 +18,6 @@ If you encounter any problems, have questions, or would like to provide feedback
 
 ## Citing ArtiCull
 
-If you use ArtiCull in your research, please cite:
+If you use ArtiCull in your research, please cite our [preprint](https://www.biorxiv.org/content/10.1101/2025.02.24.639589v1):
 
 > Satas, G., Myers, M. A., McPherson, A., & Shah, S. P. (2025). Inferring active mutational processes in cancer using single cell sequencing and evolutionary constraints. bioRxiv. doi:10.1101/2025.02.24.639589
