@@ -49,9 +49,8 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Example Usage</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#example-files">Example Files</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#instructions">Instructions</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#follow-setup-steps-and-activate-conda-environment">0. Follow setup steps and activate conda environment</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#extract-features">1. Extract features</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#run-classification">2. Run classification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#follow-setup-and-activate-conda-environment">Follow setup and activate conda environment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-classification">Run classification</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#output">Output</a><ul>
@@ -101,8 +100,8 @@
 </section>
 <section id="instructions">
 <h2>Instructions<a class="headerlink" href="#instructions" title="Link to this heading"></a></h2>
-<section id="follow-setup-steps-and-activate-conda-environment">
-<h3>0. Follow setup steps and activate conda environment<a class="headerlink" href="#follow-setup-steps-and-activate-conda-environment" title="Link to this heading"></a></h3>
+<section id="follow-setup-and-activate-conda-environment">
+<h3>Follow setup and activate conda environment<a class="headerlink" href="#follow-setup-and-activate-conda-environment" title="Link to this heading"></a></h3>
 <p>Follow the directions in <a class="reference internal" href="installation.html"><span class="doc">Installation</span></a> to create a conda environment and download required genomic tracks.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>requirements.yml<span class="w"> </span>-n<span class="w"> </span>articull-env
 conda<span class="w"> </span>activate<span class="w"> </span>articull-env
@@ -114,26 +113,19 @@ bash<span class="w"> </span>scripts/setup_mappability_track.bash<span class="w">
 </pre></div>
 </div>
 </section>
-<section id="extract-features">
-<h3>1. Extract features<a class="headerlink" href="#extract-features" title="Link to this heading"></a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">maf</span><span class="o">=</span>example/example.maf
-<span class="nv">extract_features_output</span><span class="o">=</span>example/articull.features.tsv
-<span class="nv">bam</span><span class="o">=</span>example/example.bam
-<span class="nv">resources_dir</span><span class="o">=</span>resources/<span class="w">  </span><span class="c1"># update if you saved to a different location during setup</span>
-
-python<span class="w"> </span>-m<span class="w"> </span>articull<span class="w"> </span>extract_features<span class="w"> </span><span class="nv">$maf</span><span class="w"> </span><span class="nv">$extract_features_output</span><span class="w"> </span><span class="nv">$bam</span><span class="w"> </span>--resources_dir<span class="w"> </span><span class="nv">$resources_dir</span><span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
-</pre></div>
-</div>
-</section>
 <section id="run-classification">
-<h3>2. Run classification<a class="headerlink" href="#run-classification" title="Link to this heading"></a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">extract_features_output</span><span class="o">=</span>example/articull.features.tsv
-<span class="nv">output_dir</span><span class="o">=</span>example/
+<h3>Run classification<a class="headerlink" href="#run-classification" title="Link to this heading"></a></h3>
+<blockquote>
+<div><p>This will first extract model features and save to <cite>example/example_features.tsv</cite>. Then it will run the pretrained model in <cite>model/preprint_model/</cite> directory to classify and save to <cite>example/example_result.tsv</cite>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">maf</span><span class="o">=</span>example/example.maf
+<span class="nv">bam</span><span class="o">=</span>example/example.bam
+<span class="nv">output_prefix</span><span class="o">=</span>example/example
 <span class="nv">model_dir</span><span class="o">=</span>models/preprint_model/
 
-python<span class="w"> </span>-m<span class="w"> </span>articull<span class="w"> </span>classify<span class="w"> </span><span class="nv">$extract_features_output</span><span class="w"> </span><span class="nv">$output_dir</span><span class="w"> </span><span class="nv">$model_dir</span><span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
+python<span class="w"> </span>-m<span class="w"> </span>articull<span class="w"> </span>classify<span class="w"> </span><span class="nv">$maf</span><span class="w"> </span><span class="nv">$output_prefix</span><span class="w"> </span><span class="nv">$model_dir</span><span class="w"> </span><span class="nv">$bam</span><span class="w"> </span>--cores<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
+</div></blockquote>
 </section>
 </section>
 <section id="output">

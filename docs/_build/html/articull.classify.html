@@ -111,14 +111,14 @@
 </dl>
 <dl class="py function">
 <dt class="sig sig-object py" id="articull.classify.classify.classify_variants">
-<span class="sig-prename descclassname"><span class="pre">articull.classify.classify.</span></span><span class="sig-name descname"><span class="pre">classify_variants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunksize</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncores</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#articull.classify.classify.classify_variants" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">articull.classify.classify.</span></span><span class="sig-name descname"><span class="pre">classify_variants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunksize</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncores</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#articull.classify.classify.classify_variants" title="Link to this definition"></a></dt>
 <dd><p>Classifies data using a pre-trained model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>model_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Directory where the model and scaler are stored.</p></li>
 <li><p><strong>features</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to the file containing features to classify.</p></li>
-<li><p><strong>output_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Directory where the classification results will be saved.</p></li>
+<li><p><strong>output_prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Prefix to be used for naming the output files.</p></li>
 <li><p><strong>chunksize</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Number of lines to read at a time from the features file.</p></li>
 <li><p><strong>ncores</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – Number of CPU cores to use for processing. If None, the number of physical cores will be used.</p></li>
 </ul>
@@ -152,7 +152,7 @@ VCF (Variant Calling Format) files.</p>
 </dl>
 <dl class="py function">
 <dt class="sig sig-object py" id="articull.classify.extract_features.extract_features">
-<span class="sig-prename descclassname"><span class="pre">articull.classify.extract_features.</span></span><span class="sig-name descname"><span class="pre">extract_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">maf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bams</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mappability</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#articull.classify.extract_features.extract_features" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">articull.classify.extract_features.</span></span><span class="sig-name descname"><span class="pre">extract_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">maf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bams</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mappability</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_prefix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#articull.classify.extract_features.extract_features" title="Link to this definition"></a></dt>
 <dd><p>Extracts features from given MAF (Mutation Annotation Format) file, BAM files, and mappability data,
 and outputs the result to a specified file.</p>
 <dl class="field-list simple">
@@ -165,7 +165,10 @@ and outputs the result to a specified file.</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
+<dd class="field-even"><p>Path to the output file containing the extracted features.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>features_file (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>)</p>
 </dd>
 </dl>
 </dd></dl>

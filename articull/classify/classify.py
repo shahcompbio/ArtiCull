@@ -12,14 +12,14 @@ import os
 import numpy as np
 from multiprocessing import Pool
 
-def classify_variants(model_dir, features, output_dir, chunksize, ncores):
+def classify_variants(model_dir, features, output_prefix, chunksize, ncores):
     """
     Classifies data using a pre-trained model.
 
     Args:
         model_dir (str): Directory where the model and scaler are stored.
         features (str): Path to the file containing features to classify.
-        output_dir (str): Directory where the classification results will be saved.
+        output_prefix (str): Prefix to be used for naming the output files.
         chunksize (int): Number of lines to read at a time from the features file.
         ncores (int): Number of CPU cores to use for processing. If None, the number of physical cores will be used.
 
@@ -32,7 +32,7 @@ def classify_variants(model_dir, features, output_dir, chunksize, ncores):
         3. Reads the features file in chunks and classifies the data.  
         4. Saves the classification results to the specified output directory.  
     """
-    _validate_arguments(model_dir, features, output_dir)
+    _validate_arguments(model_dir, features, output_prefix)
     print("1. Loading model from: {}".format(model_dir))
     model, scaler = _load_model(model_dir)
     print("2. Classifying data from: {}".format(features))
@@ -47,10 +47,10 @@ def classify_variants(model_dir, features, output_dir, chunksize, ncores):
         print('\r\t{}/{} variants completed'.format(i * chunksize, nlines), end='')
         first = (i == 0)
         df['f_p_normal'] = df['f_p_normal'].fillna(0)
-        _process_chunk(df, model, scaler, output_dir, ncores, first)
+        _process_chunk(df, model, scaler, output_prefix, ncores, first)
     print('\r\t{}/{} variants completed'.format(nlines, nlines), end='')
 
-def _process_chunk(df, model, scaler, output_dir, ncores, first):
+def _process_chunk(df, model, scaler, output_prefix, ncores, first):
     """
     Processes a chunk of data by classifying SNPs using the provided model and scaler.
 
@@ -58,7 +58,7 @@ def _process_chunk(df, model, scaler, output_dir, ncores, first):
         df (pandas.DataFrame): The input dataframe containing the data to be processed.
         model: The classification model to be used for predicting probabilities.
         scaler: The scaler object used to scale the input data.
-        output_dir (str): The directory where the output will be written.
+        output_prefix (str): The prefix to be used for naming the output files.
         ncores (int): The number of cores to be used for parallel processing.
         first (bool): A flag indicating if this is the first chunk being processed.
 
@@ -72,7 +72,7 @@ def _process_chunk(df, model, scaler, output_dir, ncores, first):
     ###
     input_data = _scale_data(df[df['var_type'].isin(['SNP', 'DNP'])].dropna(), scaler)
     probs = _predict(df[df['var_type'].isin(['SNP', 'DNP'])].dropna(), input_data, model, ncores)
-    _write_output_chunk(df, probs, output_dir, first)
+    _write_output_chunk(df, probs, output_prefix, first)
 
 def _scale_data(df, scaler):
     """
@@ -91,14 +91,14 @@ def _scale_data(df, scaler):
     scaled_data = scaler.transform(data)
     return scaled_data
 
-def _write_output_chunk(df, probs, output_dir, first):
+def _write_output_chunk(df, probs, output_prefix, first):
     """
     Writes a chunk of the output DataFrame to a TSV file.
 
     Args:
         df (pandas.DataFrame): The input DataFrame containing the data to be classified.
         probs (array-like): The probabilities of each row being an artifact.
-        output_dir (str): The directory where the output file will be saved.
+        output_prefix (str): The prefix to be used for naming the output files.
         first (bool): A flag indicating whether this is the first chunk being written. 
                     If True, the file will be created with a header. 
                     If False, the data will be appended to the existing file without a header.
@@ -111,20 +111,20 @@ def _write_output_chunk(df, probs, output_dir, first):
     df['result'] = df['result'].fillna('SKIP')
 
     out_df = df[['chrm', 'pos', 'ref_allele', 'alt_allele', 'result', 'prob_artifact']]
-    out_file = os.path.join(output_dir, 'result.tsv')
+    out_file = output_prefix +"_result.tsv"
     if first:
         out_df.to_csv(out_file, sep='\t', index=False)
     else:
         out_df.to_csv(out_file, mode='a', header=False, sep='\t', index=False)
 
-def _validate_arguments(model_dir, features, output_dir):
+def _validate_arguments(model_dir, features, output_prefix):
     """
     Validates the input arguments for the classifier application.
 
     Args:
         model_dir (str): Path to the directory containing the model and scaler files.
         features (str): Path to the input features file.
-        output_dir (str): Path to the output directory.
+        output_prefix (str): Prefix to be used for naming the output files.
 
     Raises:
         AssertionError: If any of the following conditions are not met:
@@ -139,8 +139,11 @@ def _validate_arguments(model_dir, features, output_dir):
     assert os.path.isdir(model_dir), f"Model dir {model_dir} does not exist."
     assert os.path.isfile(os.path.join(model_dir, 'model.pkl')), f"Model file {os.path.join(model_dir, 'model.pkl')} does not exist."
     assert os.path.isfile(os.path.join(model_dir, 'scaler.pkl')), f"Scaler file {os.path.join(model_dir, 'scaler.pkl')} does not exist."
+    output_dir = os.path.dirname(output_prefix)
     assert os.path.isdir(output_dir), f"Output directory {output_dir} does not exist."
-    assert os.access(output_dir, os.W_OK), f"Output directory exists, but cannot be written to due to permissions: {output_dir}"
+    assert os.access(output_dir, os.W_OK), (
+        f"Output directory exists, but cannot be written to due to permissions: {output_dir}"
+    )
 
 def _load_model(model_dir):
     """

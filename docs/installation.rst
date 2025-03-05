@@ -24,7 +24,7 @@ First, ensure you have `conda <https://docs.conda.io/en/latest/>`_ installed on 
     conda activate articull-env
 
 Downloading Reference Data Tracks
-------------------------------
+---------------------------------
 
 Use the provided script to download and process the reference genome mappability track. Note that the download requires ~1GB of space and expands to ~5GB when uncompressed.
 By default, files are saved to the `resources` directory unless an alternative output directory is specified.

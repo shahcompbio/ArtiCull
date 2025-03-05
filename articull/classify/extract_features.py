@@ -21,7 +21,7 @@ from articull._utils.bams import match_variants_to_filenames,  generate_reads,  
 
 import math
 
-def extract_features(maf, bams, mappability, output):
+def extract_features(maf, bams, mappability, output_prefix):
     """
     Extracts features from given MAF (Mutation Annotation Format) file, BAM files, and mappability data, 
     and outputs the result to a specified file.
@@ -33,10 +33,10 @@ def extract_features(maf, bams, mappability, output):
         output (str): Path to the output file where the extracted features will be saved.
 
     Returns:
-        None
+        features_file (str): Path to the output file containing the extracted features.
     """
     
-    _validate_arguments(maf, bams, mappability, output)
+    _validate_arguments(maf, bams, mappability, output_prefix)
     random.seed(42)
     mappability = os.path.join(mappability, 'mappability') 
     print("1. Reading Variants from: {}\n".format(maf))
@@ -45,8 +45,11 @@ def extract_features(maf, bams, mappability, output):
     df = _extract_read_features(df, cell_labels = None, subsample = None, data_dirs = False, filelist = bams)
     print("\n3. Extracting Mappability from: {}\n".format(mappability) )
     df = _run_mappability_by_chrm(df, mappability)
-    print("4. Outputting Result to: {}\n".format(output))
+    output = f'{output_prefix}_features.tsv'
+    print("4. Outputting Features to: {}\n".format(output))
+
     df.to_csv(output, sep = '\t', index=False)
+    return output
 
 
 def _validate_arguments(input_file, bams, resources_dir, output):

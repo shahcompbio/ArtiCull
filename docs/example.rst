@@ -13,7 +13,7 @@ Example Files
 Instructions
 ------------
 
-0. Follow setup steps and activate conda environment
+Follow setup and activate conda environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Follow the directions in :doc:`installation` to create a conda environment and download required genomic tracks.
@@ -30,28 +30,19 @@ If you have already done this previously, ensure that the `articull-env`` enviro
 
     conda activate articull-env
 
-1. Extract features
-^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-    maf=example/example.maf
-    extract_features_output=example/articull.features.tsv
-    bam=example/example.bam
-    resources_dir=resources/  # update if you saved to a different location during setup
-
-    python -m articull extract_features $maf $extract_features_output $bam --resources_dir $resources_dir --cores 1 
-
-2. Run classification
+Run classification
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: bash
+    This will first extract model features and save to `example/example_features.tsv`. Then it will run the pretrained model in `model/preprint_model/` directory to classify and save to `example/example_result.tsv`.
 
-    extract_features_output=example/articull.features.tsv
-    output_dir=example/
-    model_dir=models/preprint_model/
+    .. code-block:: bash
 
-    python -m articull classify $extract_features_output $output_dir $model_dir --cores 1
+        maf=example/example.maf
+        bam=example/example.bam
+        output_prefix=example/example
+        model_dir=models/preprint_model/
+
+        python -m articull classify $maf $output_prefix $model_dir $bam --cores 1
 
 Output
 ------

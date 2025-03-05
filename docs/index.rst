@@ -21,7 +21,7 @@ including mutational signature and evolutionary analyses.
 Citation
 --------
 
-If you use ArtiCull in your research, please cite the following manuscript:
+If you use ArtiCull in your research, please cite:
 
     Satas, G., Myers, M. A., McPherson, A., & Shah, S. P. (2025). Inferring active mutational processes in cancer using single cell sequencing and evolutionary constraints. bioRxiv. doi:10.1101/2025.02.24.639589
 
@@ -38,8 +38,6 @@ If you encounter any issues, please open an issue on the `ArtiCull GitHub <https
     example
     usage
     modules
-
-
 
 ArtiCull is released under the MIT license.
 
