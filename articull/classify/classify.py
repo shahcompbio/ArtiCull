@@ -12,7 +12,7 @@ import os
 import numpy as np
 from multiprocessing import Pool
 
-def classify_variants(model_dir, features, output_prefix, chunksize, ncores):
+def classify_variants(model_dir, features, output_prefix, chunksize=5000, ncores=1):
     """
     Classifies data using a pre-trained model.
 
@@ -49,6 +49,7 @@ def classify_variants(model_dir, features, output_prefix, chunksize, ncores):
         df['f_p_normal'] = df['f_p_normal'].fillna(0)
         _process_chunk(df, model, scaler, output_prefix, ncores, first)
     print('\r\t{}/{} variants completed'.format(nlines, nlines), end='')
+    return output_prefix+"_result.tsv"
 
 def _process_chunk(df, model, scaler, output_prefix, ncores, first):
     """

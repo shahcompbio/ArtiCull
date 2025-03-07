@@ -40,7 +40,7 @@ def setup_ncores(ncores=None):
         os.environ['OPENBLAS_NUM_THREADS'] = str(ncores * threads_per_core)
         os.environ['MKL_NUM_THREADS'] = str(ncores * threads_per_core)
 
-def setup_pandarallel(mode, ncores=None):
+def setup_pandarallel(progress_bar=True, ncores=1):
     """
     Initializes the pandarallel library with the specified mode and number of cores.
 
@@ -56,8 +56,5 @@ def setup_pandarallel(mode, ncores=None):
     Returns:
         None
     """
-    progress_bar = mode != 'classify'
-    if ncores:
-        pandarallel.initialize(progress_bar=progress_bar, nb_workers=ncores, use_memory_fs=True)
-    else:
-        pandarallel.initialize(progress_bar=progress_bar, use_memory_fs=False)
+    if ncores == 1: print("Running in single-core mode. To speed up articull and enable parallel processing, set ncores to a value greater than 1.")
+    pandarallel.initialize(progress_bar=progress_bar, nb_workers=ncores, use_memory_fs=True)

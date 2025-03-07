@@ -11,6 +11,7 @@ Functions:
 
 import argparse
 import os
+import sys
 from articull._utils.setup import setup_ncores, setup_pandarallel
 
 def articull():
@@ -25,9 +26,47 @@ def articull():
     """
     parser = argparse.ArgumentParser()
     args = _setup_module_arguments(parser)
-    setup_ncores(args.cores)
-    setup_pandarallel(args.mode, args.cores)
+
+    setup(args.cores, args.progress_bar)
     _run_module(args)
+
+def setup(ncores, progress_bar):
+    setup_ncores(ncores)
+    setup_pandarallel(progress_bar, ncores)
+
+def download_resources(output_dir, force=False):
+    """
+    Downloads the genomic tracks required for running ArtiCull.
+
+    Args:
+        output_path (str): The path to the directory where the resources should be downloaded.
+        force (bool): If True, the resources will be downloaded even if they already exist. <Default> False
+
+    Returns:
+        None
+    """
+
+    if not os.path.exists(output_dir):
+        raise FileNotFoundError(f"Directory {output_dir} does not exist.")
+    if not os.path.isdir(output_dir):
+        raise NotADirectoryError(f"Path {output_dir} is not a directory.")
+    if not os.access(output_dir, os.W_OK):
+        raise PermissionError(f"Directory {output_dir} is not writable.")
+    
+    required_files = [f"chr{chrom}.bedGraph" for chrom in list(range(1, 23)) + ['X', 'Y']]
+    missing_files = [os.path.join(output_dir, 'mappability', f) for f in required_files if not os.path.isfile(os.path.join(output_dir, 'mappability', f))]
+
+    if len(missing_files) == 0 and not force:
+        print(f"Mappability files already exist in {output_dir}. Skipping download and setup. Use parameter force=True to force re-download if files are incomplete or corrupted.")
+        return
+    else: 
+        print("TEST")
+        return 
+
+    script_path = os.path.join(os.path.dirname(__file__), 'setup_mappability_track.bash')
+    os.system(f'bash {script_path} {output_dir}')
+
+
 
 def _setup_module_arguments(parser):
     """
@@ -53,6 +92,11 @@ def _setup_module_arguments(parser):
 
     for mode in modes_parser_setup.keys():
         subparser = subparsers.add_parser(mode)
+
+        prog_bar_default = sys.stdout.isatty()
+        parser.add_argument('--progress_bar', type=int, default=prog_bar_default, required=False,
+                        help='<Optional> Show dynamic progress bar. Default is true if output is to stdout and false if output has been redirected.')
+
         modes_parser_setup[mode](subparser)
 
     args = parser.parse_args()
