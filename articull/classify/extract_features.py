@@ -242,12 +242,50 @@ def _run_mappability_by_chrm(df, map_dir):
 
     return df
 
+def _get_chrm_bounds(chrm_file):
+    """
+    Get the highest and lowest positions in a BED file.
+
+    Args:
+        chrm_file (str): Path to the BED file.
+
+    Returns:
+        tuple: A tuple containing the lowest and highest positions (start, end) in the BED file.
+    """
+    with open(chrm_file, 'r') as file:
+        positions = [(int(line.split('\t')[1]), int(line.split('\t')[2])) for line in file]
+    min_pos = min(start for start, _ in positions)
+    max_pos = max(end for _, end in positions)
+    return min_pos, max_pos
+
+def _check_variant_chrm_bounds(df, chrm_file):
+    """
+    Validate that the variants in the DataFrame are within the bounds of the corresponding chromosome file.
+
+    Args:
+        df (pandas.DataFrame): DataFrame containing genomic data with 'pos' column.
+        chrm_file (str): Path to the BED file for the chromosome.
+
+    Returns:
+        pandas.Series: A boolean Series where True indicates the variant is within bounds, and False indicates it is out of bounds.
+    """
+    min_pos, max_pos = _get_chrm_bounds(chrm_file)
+    in_bounds = (df['pos'] >= min_pos) & (df['pos'] <= max_pos)
+    if not in_bounds.all():
+        out_of_bounds_variants = df[~in_bounds]
+        for _, row in out_of_bounds_variants.iterrows():
+            print(f"Warning: Skipping variant out of chromosome bounds - Chromosome: {row['chrm']}, Position: {row['pos']}. "
+                "There may be caused by a reference mismatch between mappability files and variant calls.")
+
+    return in_bounds
+
 def _run_mappability(df, mappability):
     """
     Annotates a DataFrame with mappability scores.
     This function takes a DataFrame containing genomic positions and annotates it with mappability scores
     by creating a BED file, intersecting it with a mappability file using bedtools, and then joining the
     results back to the original DataFrame.
+    Variants that are out of bounds are skipped during bedtools operations but included in the final DataFrame with NaN for mappability.
 
     Args:
         df (pd.DataFrame): DataFrame containing genomic positions with columns ['chrm', 'pos'].
@@ -258,15 +296,14 @@ def _run_mappability(df, mappability):
 
     Raises:
         subprocess.CalledProcessError: If bedtools commands fail.
-        Warning: If the number of rows in the resulting DataFrame does not match the original DataFrame.
 
     Notes:
         - The function assumes that the 'chrm' column in the input DataFrame may or may not start with 'chr'.
         - Temporary files are created and deleted within the function.
     """
     def write_bedfile(df, bed):
-        bed_df = df[['chrm', 'pos']]
-        bed_df['chrm'] = bed_df['chrm'].apply(lambda x: x if str(x).startswith('chr') else 'chr' + str(x)) # N -> chrN
+        bed_df = df[['chrm', 'pos']].copy()
+        bed_df['chrm'] = bed_df['chrm'].apply(lambda x: x if str(x).startswith('chr') else 'chr' + str(x))  # N -> chrN
         bed_df['start'] = bed_df['pos'] - 150
         bed_df['end'] = bed_df['pos'] + 150
         del bed_df['pos']
@@ -274,8 +311,8 @@ def _run_mappability(df, mappability):
         bed.close()
 
     def intersect_mappability(mappability, bed, bed_sorted, map):
-        sort_bed = "bedtools sort -i {}".format(bed.name)
-        intersect_map = "bedtools map -a {} -b {} -c 4 -o mean -header".format(bed_sorted.name, mappability)
+        sort_bed = f"bedtools sort -i {bed.name}"
+        intersect_map = f"bedtools map -a {bed_sorted.name} -b {mappability} -c 4 -o mean -header"
         subprocess.check_call(sort_bed.split(' '), stdout=bed_sorted)
         bed_sorted.close()
         subprocess.check_call(intersect_map.split(' '), stdout=map)
@@ -286,24 +323,32 @@ def _run_mappability(df, mappability):
         map_df['pos'] = ((map_df['start'] + map_df['end'])/2).astype(int)
         map_df['chrm'] = map_df['chrm'].astype(str)
         if not df['chrm'].iloc[0].startswith('chr'):
-            map_df['chrm'] = map_df['chrm'].apply(lambda x: x.replace('chr', '')) # chrN -> N
-        df = df.merge(map_df[['chrm', 'pos', 'f_map']], on = ['chrm','pos'], how = 'inner')
-        if len(df) != len(map_df):
-            print("Warning: {} variants were not correctly matched with mappability.\
-                This shouldn't happen. Please raise an issue on github with this error".format(len(map_df)-len(df)))
+            map_df['chrm'] = map_df['chrm'].apply(lambda x: x.replace('chr', ''))  # chrN -> N
+        df = df.merge(map_df[['chrm', 'pos', 'f_map']], on=['chrm', 'pos'], how='left')
         return df
 
+    # Identify in-bounds and out-of-bounds variants
+    in_bounds = _check_variant_chrm_bounds(df, mappability)
+    valid_variants = df[in_bounds].copy()
+    invalid_variants = df[~in_bounds].copy()
+    invalid_variants['f_map'] = float('nan')  # Assign NaN for mappability
+
     # Create sorted bed file
-    bed, bed_sorted, map = [tempfile.NamedTemporaryFile(delete=False, mode='w') for i in range(3)]
+    bed, bed_sorted, mapf = [tempfile.NamedTemporaryFile(delete=False, mode='w') for _ in range(3)]
 
     try:
-        # Close all files since subprocesses will be writing to them
-        write_bedfile(df, bed)
-        intersect_mappability(mappability, bed, bed_sorted, map)
-        df = join_mappability(df, map.name)
+        # Process only valid variants
+        write_bedfile(valid_variants, bed)
+        intersect_mappability(mappability, bed, bed_sorted, mapf)
+        valid_variants = join_mappability(valid_variants, mapf.name)
 
     finally:
         # Remove the created temporary files
-        os.remove(bed.name); os.remove(bed_sorted.name); os.remove(map.name)
+        os.remove(bed.name)
+        os.remove(bed_sorted.name)
+        os.remove(mapf.name)
+
+    # Combine valid and invalid variants, preserving the original order
+    df = pd.concat([valid_variants, invalid_variants]).sort_index()
 
     return df
