@@ -90,14 +90,14 @@ def _setup_module_arguments(parser):
     subparsers = parser.add_subparsers(dest = 'mode', required = True, \
             help='<Required> Select mode')
 
+
     for mode in modes_parser_setup.keys():
         subparser = subparsers.add_parser(mode)
-
-        prog_bar_default = sys.stdout.isatty()
-        parser.add_argument('--progress_bar', type=int, default=prog_bar_default, required=False,
-                        help='<Optional> Show dynamic progress bar. Default is true if output is to stdout and false if output has been redirected.')
-
         modes_parser_setup[mode](subparser)
+
+    prog_bar_default = sys.stdout.isatty()
+    parser.add_argument('--progress_bar', type=int, default=prog_bar_default, required=False,
+                    help='<Optional> Show dynamic progress bar. Default is true if output is to stdout and false if output has been redirected.')
 
     args = parser.parse_args()
     return args
