@@ -13,7 +13,7 @@ import pandas as pd # type: ignore
 import io
 import gzip
 
-def get_variants(filename, file_type="maf"):
+def get_variants(filename, file_type="maf", filter_vcf=True):
     """
     Extracts variant information from a given file in MAF or VCF format.
 
@@ -47,7 +47,8 @@ def get_variants(filename, file_type="maf"):
         df['pos'] = df['POS']
         df['ref_allele'] = df['REF']
         df['alt_allele'] = df['ALT']
-        df = df[df['FILTER'] == 'PASS']
+        if filter_vcf:
+            df = df[df['FILTER'] == 'PASS']
         df = df[df.ref_allele.apply(lambda x: len(str(x)) == 1 and '-' not in x)]
         df = df[df.alt_allele.apply(lambda x: len(str(x)) == 1 and '-' not in x)]
         df['var_type'] = 'SNP'

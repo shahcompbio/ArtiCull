@@ -21,7 +21,7 @@ from articull._utils.bams import match_variants_to_filenames,  generate_reads,  
 
 import math
 
-def extract_features(maf, bams, mappability, output_prefix):
+def extract_features(maf, bams, mappability, output_prefix, filter_vcf=True):
     """
     Extracts features from given MAF (Mutation Annotation Format) file, BAM files, and mappability data, 
     and outputs the result to a specified file.
@@ -40,7 +40,7 @@ def extract_features(maf, bams, mappability, output_prefix):
     random.seed(42)
     mappability = os.path.join(mappability, 'mappability') 
     print("1. Reading Variants from: {}\n".format(maf))
-    df = get_variants(maf)
+    df = get_variants(maf, filter_vcf=filter_vcf)
     print("2. Extracting Read Features from: {}".format(bams))
     df = _extract_read_features(df, cell_labels = None, subsample = None, data_dirs = False, filelist = bams)
     print("\n3. Extracting Mappability from: {}\n".format(mappability) )

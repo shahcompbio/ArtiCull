@@ -21,7 +21,7 @@ import seaborn as sns # type: ignore
 from articull._utils.io import get_variants
 from articull._utils.bams import match_variants_to_filenames, get_sam, generate_reads
 
-def preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn):
+def preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn, filter_vcf=True):
     """
     Preprocesses variant and copy number data to compute CCFs for each variant in each clone.
 
@@ -45,7 +45,7 @@ def preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_fil
     _validate_arguments(maf, bam_dirs, output_dir, signals_dir, cellclone_file, hscn_file)
 
     print("1. Reading variants from: {}".format(maf))
-    df = get_variants(maf)
+    df = get_variants(maf, filter_vcf=filter_vcf)
 
     print("2. Process copy number information")
     if signals_dir: 

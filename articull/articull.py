@@ -133,9 +133,9 @@ def _run_module(args):
 
     elif mode == 'train_preprocessing':
         from articull.train import preprocessing
-        maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn = \
-        args.maf, args.bam_dirs, args.signals_dir, args.output_dir, args.fullbam, args.cell_clones, args.hscn, args.use_cached_cn
-        preprocessing.preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn)
+        maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn, filter_vcf = \
+        args.maf, args.bam_dirs, args.signals_dir, args.output_dir, args.fullbam, args.cell_clones, args.hscn, args.use_cached_cn, not args.no_vcf_filter
+        preprocessing.preprocessing(maf, bam_dirs, signals_dir, output_dir, fullbam, cellclone_file, hscn_file, use_cached_cn, filter_vcf=filter_vcf)
 
     elif mode == 'train_genlabels':
         from articull.train import generate_labels
@@ -145,17 +145,17 @@ def _run_module(args):
     elif mode == 'classify_variants':
         from articull.classify import classify
 
-        model_dir, features, output_dir, chunksize, ncores= args.model_dir, args.features, args.output_dir, args.chunksize, args.cores
-        classify.classify_variants(model_dir, features, output_dir, chunksize, ncores)
-    
+        model_dir, features, output_dir, chunksize, ncores, filter_vcf = args.model_dir, args.features, args.output_dir, args.chunksize, args.cores, not args.no_vcf_filter
+        classify.classify_variants(model_dir, features, output_dir, chunksize, ncores, filter_vcf=filter_vcf)
+
     elif mode == 'classify':
         from articull.classify import extract_features, classify
 
         if args.features_file:
             features_file = args.features_file
         if not args.features_file:
-            maf, bams, mappability, output = args.input_file, args.bams, args.resources_dir, args.output_prefix
-            features_file = extract_features.extract_features(maf, bams, mappability, output)
+            maf, bams, mappability, output, filter_vcf = args.input_file, args.bams, args.resources_dir, args.output_prefix, not args.no_vcf_filter
+            features_file = extract_features.extract_features(maf, bams, mappability, output, filter_vcf=filter_vcf)
 
         model_dir, output_prefix, chunksize, ncores = args.model_dir, args.output_prefix, args.chunksize, args.cores
         classify.classify_variants(model_dir, features_file, output_prefix, chunksize, ncores)
@@ -178,6 +178,8 @@ def _EF_add_parser_arguments(parser):
     parser.add_argument(dest='bams', nargs="+", type = str, help = '<Required> list of bam files')
     parser.add_argument('--cores', '-j', default = None, type = int, \
             help = 'Number of workers to use for parallelization. <Default> the number of available cores')
+    parser.add_argument('--no-vcf-filter', action='store_true', default=False,
+                        help='<Optional> If set, do not filter VCF for FILTER == PASS. Default is to apply the filter.')
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.abspath(os.path.join(script_dir, os.pardir))
@@ -210,6 +212,8 @@ def _C_add_parser_arguments(parser):
                             'If not provided, features will be extracted from input bam files')
     parser.add_argument('--cores', '-j', default=None, type=int,
                         help='Number of workers to use for parallelization. <Default> the number of available cores')
+    parser.add_argument('--no-vcf-filter', action='store_true', default=False,
+                        help='<Optional> If set, do not filter VCF for FILTER == PASS. Default is to apply the filter.')
 
 
 def _AC_add_parser_arguments(parser):
@@ -287,6 +291,8 @@ def _TPP_add_parser_arguments(parser):
     parser.add_argument('--use_cached_cn', action="store_true", help = 'Use already processed cell-to-clone map if it exists')
     parser.add_argument('--cores', '-j', default = None, type = int, \
             help = 'Number of workers to use for parallelization. <Default> the number of available cores')
+    parser.add_argument('--no-vcf-filter', action='store_true', default=False,
+                        help='<Optional> If set, do not filter VCF for FILTER == PASS. Default is to apply the filter.')
 
 if __name__ == '__main__':
     articull()
