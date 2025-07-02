@@ -49,6 +49,17 @@ def get_variants(filename, file_type="maf", filter_vcf=True):
         df['alt_allele'] = df['ALT']
         if filter_vcf:
             df = df[df['FILTER'] == 'PASS']
+        if len(df) == 0:
+            if filter_vcf:
+                msg = (
+                    "No variants found in VCF file after filtering. "
+                    "When filtering is enabled (default), only variants with FILTER == 'PASS' are retained. "
+                    "If your VCF does not use the 'PASS' filter or you wish to include all variants, "
+                    "consider using the --no-vcf-filter flag."
+                )
+            else:
+                msg = "No variants found in VCF file."
+            raise Exception(msg)
         df = df[df.ref_allele.apply(lambda x: len(str(x)) == 1 and '-' not in x)]
         df = df[df.alt_allele.apply(lambda x: len(str(x)) == 1 and '-' not in x)]
         df['var_type'] = 'SNP'
