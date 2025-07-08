@@ -157,11 +157,10 @@ def _run_module(args):
             maf, bams, mappability, output, filter_vcf = args.input_file, args.bams, args.resources_dir, args.output_prefix, not args.no_vcf_filter
             features_file = extract_features.extract_features(maf, bams, mappability, output, filter_vcf=filter_vcf)
 
-        model_dir, output_prefix, chunksize, ncores = args.model_dir, args.output_prefix, args.chunksize, args.cores
-        classify.classify_variants(model_dir, features_file, output_prefix, chunksize, ncores)
+        if not args.extract_features_only: 
+            model_dir, output_prefix, chunksize, ncores = args.model_dir, args.output_prefix, args.chunksize, args.cores
+            classify.classify_variants(model_dir, features_file, output_prefix, chunksize, ncores)
 
-    #else: 
-    #    raise KeyError('Invalid mode provided: {} \nMode must be one of {}'.format(mode, str(modes_parser_setup.keys())))
 
 def _EF_add_parser_arguments(parser):
     """
@@ -178,7 +177,7 @@ def _EF_add_parser_arguments(parser):
     parser.add_argument(dest='bams', nargs="+", type = str, help = '<Required> list of bam files')
     parser.add_argument('--cores', '-j', default = None, type = int, \
             help = 'Number of workers to use for parallelization. <Default> the number of available cores')
-    parser.add_argument('--no-vcf-filter', action='store_true', default=False,
+    parser.add_argument('--no_vcf_filter', action='store_true', default=False,
                         help='<Optional> If set, do not filter VCF for FILTER == PASS. Default is to apply the filter.')
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -212,8 +211,10 @@ def _C_add_parser_arguments(parser):
                             'If not provided, features will be extracted from input bam files')
     parser.add_argument('--cores', '-j', default=None, type=int,
                         help='Number of workers to use for parallelization. <Default> the number of available cores')
-    parser.add_argument('--no-vcf-filter', action='store_true', default=False,
+    parser.add_argument('--no_vcf_filter', action='store_true', default=False,
                         help='<Optional> If set, do not filter VCF for FILTER == PASS. Default is to apply the filter.')
+    parser.add_argument('--extract_features_only', action='store_true', default=False,
+                        help='<Optional> If set, will only extract features, but not run classification. ')
 
 
 def _AC_add_parser_arguments(parser):
@@ -291,7 +292,7 @@ def _TPP_add_parser_arguments(parser):
     parser.add_argument('--use_cached_cn', action="store_true", help = 'Use already processed cell-to-clone map if it exists')
     parser.add_argument('--cores', '-j', default = None, type = int, \
             help = 'Number of workers to use for parallelization. <Default> the number of available cores')
-    parser.add_argument('--no-vcf-filter', action='store_true', default=False,
+    parser.add_argument('--no_vcf_filter', action='store_true', default=False,
                         help='<Optional> If set, do not filter VCF for FILTER == PASS. Default is to apply the filter.')
 
 if __name__ == '__main__':
