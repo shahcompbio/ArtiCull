@@ -10,7 +10,8 @@ import pickle
 import pandas as pd # type: ignore
 import os
 import numpy as np
-from multiprocessing import Pool
+from joblib import Parallel, delayed
+    
 
 def classify_variants(model_dir, features, output_prefix, chunksize=5000, ncores=1):
     """
@@ -42,12 +43,16 @@ def classify_variants(model_dir, features, output_prefix, chunksize=5000, ncores
         import psutil
         ncores = psutil.cpu_count(logical=False)
 
+
+
+
     df_reader = pd.read_table(features, chunksize=chunksize)
     for i, df in enumerate(df_reader):
         print('\r\t{}/{} variants completed'.format(i * chunksize, nlines), end='')
         first = (i == 0)
         df['f_p_normal'] = df['f_p_normal'].fillna(0)
         _process_chunk(df, model, scaler, output_prefix, ncores, first)
+
     print('\r\t{}/{} variants completed'.format(nlines, nlines), end='')
     return output_prefix+"_result.tsv"
 
@@ -66,8 +71,6 @@ def _process_chunk(df, model, scaler, output_prefix, ncores, first):
     Returns:
         None
     """
-    orig_df = df
-
     ###
     #   TEMPORARY: For now, only classify SNPs. Other models are not implemented
     ###
@@ -189,10 +192,11 @@ def _predict(df, input_data, model, ncores):
 
     tasks = []
     for _, df_ in df.groupby('chunk'):
-        tasks.append((model, df_[scaled_features].values.copy()))
+        tasks.append(df_[scaled_features].values.copy())
 
-    with Pool(ncores) as p:
-        results = p.map(_predict_task, tasks)
+    results = Parallel(n_jobs=ncores)(
+        delayed(_predict_task)((model, data)) for data in tasks
+    )
 
     probs = np.concatenate(results)
     return pd.Series(data=probs, index=df.index)
