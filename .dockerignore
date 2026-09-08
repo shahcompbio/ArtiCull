@@ -1,0 +1,12 @@
+*
+!articull/
+!models/preprint_model/
+
+# Nothing below here should ever end up in the image, even if the rules above
+# are loosened.
+**/__pycache__/
+**/*.py[cod]
+**/.ipynb_checkpoints/
+**/*.bedGraph
+**/*.bigWig
+**/*.bw
